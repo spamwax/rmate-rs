@@ -3,7 +3,6 @@ use serde::Deserialize;
 use socket2::SockAddr;
 use socket2::{Domain, Socket, Type};
 use std::fs::{create_dir_all, remove_file};
-use std::io::Error;
 use std::thread;
 use std::time::Duration;
 use uuid::Uuid;
@@ -50,11 +49,12 @@ fn main() {
     socket_srv.listen(128).unwrap();
 
     loop {
+        print!(" Waiting on a client... ");
         let (sock, _) = socket_srv.accept().unwrap();
         println!("connection from {:?}", sock);
         let mut de = serde_json::Deserializer::from_reader(&sock);
         let item = Item::deserialize(&mut de).unwrap();
-        print!("items is :{}\n\n", item.name);
+        println!("  <-- {:?}", item);
         let resp = ClientQuery {
             session_id: Uuid::new_v4(),
             query_id: 2,
@@ -62,11 +62,10 @@ fn main() {
         };
         let buff = serde_json::to_string(&resp).unwrap();
         let n = sock.send(buff.as_bytes()).unwrap();
-        print!(" sent {} bytes\n", n);
+        println!("  --> {:?}  ({} bytes)", item, n);
         let item = Item::deserialize(&mut de).unwrap();
-        print!("items is :{}\n\n", item.name);
-        println!("Waiting for last message...");
+        println!("  <-- {:?}", item);
         let item = Item::deserialize(&mut de).unwrap();
-        print!("items is :{}\n", item.name);
+        println!("  <-- {:?}\n", item);
     }
 }
