@@ -49,12 +49,11 @@ fn main() {
     socket_srv.listen(128).unwrap();
 
     loop {
-        print!(" Waiting on a client... ");
-        let (sock, _) = socket_srv.accept().unwrap();
-        println!("connection from {:?}", sock);
+        let (sock, addr) = socket_srv.accept().unwrap();
+        println!("connection from ==>\n\tsock {:?}\n\taddr: {:?}", sock, addr);
         let mut de = serde_json::Deserializer::from_reader(&sock);
         let item = Item::deserialize(&mut de).unwrap();
-        println!("  <-- {:?}", item);
+        print!("received item is :{}\n", item.name);
         let resp = ClientQuery {
             session_id: Uuid::new_v4(),
             query_id: 2,
@@ -64,8 +63,9 @@ fn main() {
         let n = sock.send(buff.as_bytes()).unwrap();
         println!("  --> {:?}  ({} bytes)", item, n);
         let item = Item::deserialize(&mut de).unwrap();
-        println!("  <-- {:?}", item);
+        print!("received item is :{}\n", item.name);
+        println!("Waiting for last message...");
         let item = Item::deserialize(&mut de).unwrap();
-        println!("  <-- {:?}\n", item);
+        print!("item is :{}\n", item.name);
     }
 }
