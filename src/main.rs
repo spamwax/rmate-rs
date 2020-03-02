@@ -2,9 +2,8 @@ use dirs;
 use serde::Deserialize;
 use socket2::SockAddr;
 use socket2::{Domain, Socket, Type};
-use std::fs::{create_dir_all, remove_file};
-use std::thread;
-use std::time::Duration;
+use std::fs::remove_file;
+use std::net::SocketAddr;
 use uuid::Uuid;
 
 use serde_derive::{Deserialize, Serialize};
@@ -31,13 +30,11 @@ enum Input {
 }
 
 fn main() {
-    let mut socket_fn = dirs::data_dir().unwrap();
-    socket_fn.push("giv");
-    create_dir_all(socket_fn.as_path()).unwrap();
-    socket_fn.push(SRV_SOCKET_FN);
-    let _ = remove_file(&socket_fn);
-    let socket_srv = Socket::new(Domain::unix(), Type::stream(), None).unwrap();
-    let addr_srv = SockAddr::unix(&socket_fn).unwrap();
+    let _ = remove_file(SRV_SOCKET_FN);
+    // let socket_srv = Socket::new(Domain::unix(), Type::stream(), None).unwrap();
+    let socket_srv = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+    // let addr_srv = SockAddr::unix(SRV_SOCKET_FN).unwrap();
+    let addr_srv = "127.0.0.1:12345".parse::<SocketAddr>().unwrap().into();
 
     match socket_srv.bind(&addr_srv) {
         Ok(()) => println!(" bind success to server socket"),
@@ -60,6 +57,8 @@ fn main() {
             query: "gotyou".to_string(),
         };
         let buff = serde_json::to_string(&resp).unwrap();
+        use std::thread::sleep;
+        sleep(std::time::Duration::from_millis(3000));
         let n = sock.send(buff.as_bytes()).unwrap();
         println!("  --> {:?}  ({} bytes)", item, n);
         let item = Item::deserialize(&mut de).unwrap();
