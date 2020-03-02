@@ -45,26 +45,32 @@ fn main() {
     }
     socket_srv.listen(128).unwrap();
 
-    loop {
-        let (sock, addr) = socket_srv.accept().unwrap();
-        println!("connection from ==>\n\tsock {:?}\n\taddr: {:?}", sock, addr);
-        let mut de = serde_json::Deserializer::from_reader(&sock);
-        let item = Item::deserialize(&mut de).unwrap();
-        print!("received item is :{}\n", item.name);
-        let resp = ClientQuery {
-            session_id: Uuid::new_v4(),
-            query_id: 2,
-            query: "gotyou".to_string(),
-        };
-        let buff = serde_json::to_string(&resp).unwrap();
-        use std::thread::sleep;
-        sleep(std::time::Duration::from_millis(3000));
-        let n = sock.send(buff.as_bytes()).unwrap();
-        println!("  --> {:?}  ({} bytes)", item, n);
-        let item = Item::deserialize(&mut de).unwrap();
-        print!("received item is :{}\n", item.name);
-        println!("Waiting for last message...");
-        let item = Item::deserialize(&mut de).unwrap();
-        print!("item is :{}\n", item.name);
-    }
+    // loop {
+    let (sock, addr) = socket_srv.accept().unwrap();
+    println!("connection from ==>\n\tsock {:?}\n\taddr: {:?}", sock, addr);
+    let mut de = serde_json::Deserializer::from_reader(&sock);
+    let item = Item::deserialize(&mut de).unwrap();
+    print!("received item is :{}\n", item.name);
+    let resp = ClientQuery {
+        session_id: Uuid::new_v4(),
+        query_id: 2,
+        query: "gotyou".to_string(),
+    };
+    let buff = serde_json::to_string(&resp).unwrap();
+    use std::thread::sleep;
+    sleep(std::time::Duration::from_millis(3000));
+    let n = sock.send(buff.as_bytes()).unwrap();
+    println!("  --> {:?}  ({} bytes)", item, n);
+    let item = Item::deserialize(&mut de).unwrap();
+    print!("received item is :{}\n", item.name);
+    println!("Waiting for last message...");
+    let item = Item::deserialize(&mut de).unwrap();
+    print!("item is :{}\n", item.name);
+    // }
+
+    let mut buf = [0u8; 1024];
+    let r = sock.recv_from(&mut buf).unwrap();
+
+    let st = String::from_utf8_lossy(&buf[0..r.0]);
+    println!("string is: {:?}", st);
 }
