@@ -1,6 +1,4 @@
-use dirs;
 use serde::Deserialize;
-use socket2::SockAddr;
 use socket2::{Domain, Socket, Type};
 use std::fs::remove_file;
 use std::net::SocketAddr;
@@ -29,20 +27,16 @@ enum Input {
     Plugin(ClientQuery),
 }
 
-fn main() {
+fn main() -> Result<(), std::io::Error> {
     let _ = remove_file(SRV_SOCKET_FN);
     // let socket_srv = Socket::new(Domain::unix(), Type::stream(), None).unwrap();
     let socket_srv = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
     // let addr_srv = SockAddr::unix(SRV_SOCKET_FN).unwrap();
     let addr_srv = "127.0.0.1:12345".parse::<SocketAddr>().unwrap().into();
 
-    match socket_srv.bind(&addr_srv) {
-        Ok(()) => println!(" bind success to server socket"),
-        Err(e) => {
-            print!("error is: {:?}", e);
-            return;
-        }
-    }
+    socket_srv.bind(&addr_srv)?;
+    println!(" successfull bind to server socket");
+
     socket_srv.listen(128).unwrap();
 
     // loop {
@@ -73,4 +67,5 @@ fn main() {
 
     let st = String::from_utf8_lossy(&buf[0..r.0]);
     println!("string is: {:?}", st);
+    Ok(())
 }
