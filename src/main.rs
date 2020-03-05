@@ -1,6 +1,4 @@
-use serde::Deserialize;
 use socket2::{Domain, Socket, Type};
-use std::fs::remove_file;
 use std::net::SocketAddr;
 use uuid::Uuid;
 
@@ -41,7 +39,7 @@ fn main() -> Result<(), std::io::Error> {
     let n = socket
         .send("real-path: /home/hamid/fook.txt\n".as_bytes())
         .unwrap();
-    let n = socket.send("data-on-save: yes\n".as_bytes()).unwrap();
+    let _n = socket.send("data-on-save: yes\n".as_bytes()).unwrap();
     let n = socket.send("re-activate: yes\n".as_bytes()).unwrap();
     let n = socket.send("token: fook.txt\n".as_bytes()).unwrap();
     let n = socket.send("data: 807\n".as_bytes()).unwrap();
