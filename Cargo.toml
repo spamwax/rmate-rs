@@ -8,8 +8,4 @@ edition = "2018"
 
 [dependencies]
 socket2 = { version = "0.3.10", features = ["unix", "reuseport", "pair"] }
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-uuid = { version = "*", features = ["v4", "serde"] }
 dirs = "2.0"
