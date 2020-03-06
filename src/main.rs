@@ -1,7 +1,9 @@
 use socket2::{Domain, Socket, Type};
 use std::env;
 use std::ffi::OsString;
+use std::fs::File;
 use std::fs::{canonicalize, metadata};
+use std::io::{BufRead, BufReader};
 use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
@@ -11,6 +13,11 @@ fn main() -> Result<(), std::io::Error> {
         return Err(Error::new(ErrorKind::Other, "no input file name"));
     }
     let fname = &args[1];
+    let filename_canon = canonicalize(fname)?;
+    let file_name = filename_canon.file_name().ok_or(Error::new(
+        ErrorKind::Other,
+        "no valid file name found in input argument",
+    ))?;
     let md = metadata(fname)?;
     if md.is_dir() {
         return Err(Error::new(
@@ -18,16 +25,13 @@ fn main() -> Result<(), std::io::Error> {
             "openning directory not supported",
         ));
     }
-    let filename_canon = canonicalize(fname)?;
-    let file_name = filename_canon.file_name().unwrap();
     let filesize = md.len();
     let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
     let port = env::var("RMATE_PORT")
         .unwrap_or("52696".to_string())
         .parse::<u16>()
         .unwrap();
-    // let addr_srv = SockAddr::unix(SRV_SOCKET_FN).unwrap();
-    // let addr_srv: socket2::SockAddr = "127.0.0.1:52696".parse::<SocketAddr>().unwrap().into();
+
     let addr_srv = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port).into();
     println!("About to connect to $RMATE_PORT");
     socket.connect(&addr_srv).unwrap();
@@ -64,8 +68,6 @@ fn main() -> Result<(), std::io::Error> {
         .send(format!("data: {}\n", filesize).as_bytes())
         .unwrap();
 
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
     // let mut buf = String::with_capacity(1024);
     // .map_err(|e| e.to_string())
     let mut total = 0usize;
@@ -87,9 +89,37 @@ fn main() -> Result<(), std::io::Error> {
         }
     }
 
-    let n = socket.send("\n.\n".as_bytes()).unwrap();
+    let _n = socket.send("\n.\n".as_bytes()).unwrap();
     println!(" read {} bytes from file", total);
 
-    loop {}
+    // socket.listen(128).unwrap();
+    let mut b = [0u8; 100];
+    println!("waiting...");
+    let _r = socket.recv(&mut b);
+    println!("got shit: {:?}", String::from_utf8_lossy(&b));
+    println!("waiting 2...");
+    let mut myline = Vec::with_capacity(8 * 1024usize);
+    let mut buf_reader = BufReader::new(&socket);
+    total = 0;
+    let mut c = 0;
+    while let Ok(n) = buf_reader.read_until(b'\n', &mut myline) {
+        c += 1;
+        if n == 0 {
+            break;
+        }
+        println!(
+            "got shit 2: {:?}  ({}, {}, {})",
+            String::from_utf8_lossy(myline.as_ref()),
+            n,
+            c,
+            total
+        );
+        myline.clear();
+        if c > 3 {
+            total += n;
+        }
+    }
+    println!("bytes: {}", total);
+
     Ok(())
 }
