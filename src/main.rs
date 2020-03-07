@@ -5,6 +5,7 @@ use std::fs::File;
 use std::fs::{canonicalize, metadata};
 use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::path::{Path, PathBuf};
 
 fn main() -> Result<(), String> {
     let args: Vec<OsString> = env::args_os().collect();
@@ -12,12 +13,12 @@ fn main() -> Result<(), String> {
         return Err("no input file name".to_string());
     }
     let fname = &args[1];
-    let socket = open_file_in_remote(fname)?;
-    handle_remote(socket);
+    let (socket, filename_canon) = open_file_in_remote(fname)?;
+    handle_remote(socket, filename_canon).map_err(|e| e.to_string())?;
     Ok(())
 }
 
-fn open_file_in_remote(fname: &OsString) -> Result<socket2::Socket, String> {
+fn open_file_in_remote(fname: &OsString) -> Result<(socket2::Socket, PathBuf), String> {
     let filename_canon = canonicalize(fname).map_err(|e| e.to_string())?;
     let file_name = filename_canon
         .file_name()
@@ -81,11 +82,9 @@ fn open_file_in_remote(fname: &OsString) -> Result<socket2::Socket, String> {
 
     let mut total = 0usize;
     let bsize = socket.recv_buffer_size().unwrap();
-    println!("hoho:: {}", bsize);
-
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
-        let f = File::open(filename_canon).map_err(|e| e.to_string())?;
+        let f = File::open(&filename_canon).map_err(|e| e.to_string())?;
         let mut buf_reader = BufReader::with_capacity(bsize, f);
         loop {
             let buffer = buf_reader.fill_buf().map_err(|e| e.to_string())?;
@@ -99,17 +98,6 @@ fn open_file_in_remote(fname: &OsString) -> Result<socket2::Socket, String> {
             buf_writer.write_all(&buffer).map_err(|e| e.to_string())?;
             buf_reader.consume(length);
         }
-        // let mut buf = String::with_capacity(0x1000);
-        // while let Ok(r) = buf_reader.read_line(&mut buf) {
-        //     if r == 0 {
-        //         println!("read last line");
-        //         break;
-        //     }
-        //     total += r;
-        //     let n = socket.send(buf.as_bytes()).unwrap();
-        //     assert_eq!(buf.as_bytes().len(), n);
-        //     buf.clear();
-        // }
     }
 
     let _n = socket.send("\n.\n".as_bytes()).map_err(|e| e.to_string())?;
@@ -122,14 +110,16 @@ fn open_file_in_remote(fname: &OsString) -> Result<socket2::Socket, String> {
         "Connected to remote app: {}",
         String::from_utf8_lossy(&b[0..n]).trim()
     );
-    Ok(socket)
+    Ok((socket, filename_canon))
 }
 
-fn handle_remote(socket: socket2::Socket) -> Result<(), std::io::Error> {
+fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(), std::io::Error> {
     let mut total = 0usize;
     println!("waiting 2...");
     let mut myline = String::with_capacity(128);
-    let mut buf_reader = BufReader::new(&socket);
+    let bsize = socket.recv_buffer_size().unwrap();
+    println!("fofofo:: {}", bsize);
+    let mut buf_reader = BufReader::with_capacity(bsize, &socket);
 
     // Wait for commands from remote app
     while buf_reader.read_line(&mut myline)? != 0 {
@@ -143,10 +133,12 @@ fn handle_remote(socket: socket2::Socket) -> Result<(), std::io::Error> {
                 println!("--> in 'close'");
                 myline.clear();
                 while let Ok(n) = buf_reader.read_line(&mut myline) {
-                    if n == 0 {
+                    if n == 0 || myline.trim() == "" {
+                        println!("breaking out of close");
                         break;
                     }
-                    println!("-- {}", myline.trim());
+                    let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0].trim();
+                    println!("-- {}", token);
                     myline.clear();
                 }
             }
@@ -154,28 +146,66 @@ fn handle_remote(socket: socket2::Socket) -> Result<(), std::io::Error> {
                 println!("--> in 'save'");
                 myline.clear();
                 buf_reader.read_line(&mut myline)?;
-                println!("- {}", myline.trim());
+                let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0].trim();
+                println!("- >{}<", token);
                 myline.clear();
                 buf_reader.read_line(&mut myline)?;
-                println!("- {}", myline.trim());
-                let data_size = myline.rsplitn(2, ": ").collect::<Vec<&str>>()[0]
+                let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
                     .trim()
                     .parse::<usize>()
                     .unwrap();
+                println!("- {}", data_size);
                 myline.clear();
                 total = 0;
-                while let Ok(n) = buf_reader.read_line(&mut myline) {
-                    if n == 0 {
-                        break;
-                    }
-                    total += n;
-                    println!("* {:?} ({}, {})", myline, myline.len(), total);
-                    myline.clear();
+                // let fp = File::create("foo.h").unwrap();
+
+                let rand_temp_file = tempfile::Builder::new()
+                    .prefix(".rmate_tmp_")
+                    .rand_bytes(8)
+                    .tempfile_in(
+                        dirs::home_dir()
+                            .or_else(|| Some(env::temp_dir()))
+                            .unwrap_or(PathBuf::from(".")),
+                    )?;
+                let random_name = rand_temp_file.path();
+                println!("temp file: {:?}", random_name);
+                let mut buf_writer = BufWriter::with_capacity(bsize, &rand_temp_file);
+                loop {
+                    let buffer = buf_reader.fill_buf()?;
+                    let length = buffer.len();
+                    total += length;
+                    // println!("{:?}", &buffer[..]);
+                    println!("read {} / {} bytes.", length, total);
                     if total >= data_size {
-                        println!("breaking out of save");
+                        // println!("{}", String::from_utf8_lossy(&buffer.clone()));
+                        let corrected_last_lenght = length - (total - data_size);
+                        assert_eq!(1, total - data_size);
+                        buf_writer.write_all(&buffer[..corrected_last_lenght])?;
+                        buf_reader.consume(corrected_last_lenght);
+                        println!("breaking out of save {} / {}", data_size, total);
                         break;
+                    } else {
+                        buf_writer.write_all(&buffer)?;
+                        buf_reader.consume(length);
                     }
                 }
+                buf_writer.flush()?;
+
+                println!("Saving: {}", filename_canon.to_str().unwrap());
+                std::fs::rename(random_name, &filename_canon)?;
+
+                // while let Ok(n) = buf_reader.read_line(&mut myline) {
+                //     if n == 0 {
+                //         break;
+                //     }
+                //     total += n;
+                //     println!("* {:?} ({}, {})", myline, myline.len(), total);
+                //     myline.clear();
+                //     if total >= data_size {
+                //         println!("breaking out of save {}, {}", data_size, total);
+                //         break;
+                //     }
+                // }
             }
             _ => {
                 if myline.trim() == "" {
