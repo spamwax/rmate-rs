@@ -124,7 +124,7 @@ fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(),
     // Wait for commands from remote app
     while buf_reader.read_line(&mut myline)? != 0 {
         println!(
-            "}}}}}}}}\nmyline >{}<\nmyline.trim >>{}<<",
+            "{{{{{{{{{{}}}}}}}}}}}}\nmyline >{}<\nmyline.trim >>{}<<",
             myline,
             myline.trim()
         );
@@ -174,15 +174,13 @@ fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(),
                     let buffer = buf_reader.fill_buf()?;
                     let length = buffer.len();
                     total += length;
-                    // println!("{:?}", &buffer[..]);
-                    println!("read {} / {} bytes.", length, total);
                     if total >= data_size {
                         // println!("{}", String::from_utf8_lossy(&buffer.clone()));
                         let corrected_last_lenght = length - (total - data_size);
                         assert_eq!(1, total - data_size);
                         buf_writer.write_all(&buffer[..corrected_last_lenght])?;
                         buf_reader.consume(corrected_last_lenght);
-                        println!("breaking out of save {} / {}", data_size, total);
+                        // println!("breaking out of save {} / {}", data_size, total);
                         break;
                     } else {
                         buf_writer.write_all(&buffer)?;
@@ -192,20 +190,9 @@ fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(),
                 buf_writer.flush()?;
 
                 println!("Saving: {}", filename_canon.to_str().unwrap());
-                std::fs::rename(random_name, &filename_canon)?;
-
-                // while let Ok(n) = buf_reader.read_line(&mut myline) {
-                //     if n == 0 {
-                //         break;
-                //     }
-                //     total += n;
-                //     println!("* {:?} ({}, {})", myline, myline.len(), total);
-                //     myline.clear();
-                //     if total >= data_size {
-                //         println!("breaking out of save {}, {}", data_size, total);
-                //         break;
-                //     }
-                // }
+                if let Err(e) = std::fs::rename(random_name, &filename_canon) {
+                    eprintln!("  Error saving: {}", e.to_string());
+                }
             }
             _ => {
                 if myline.trim() == "" {

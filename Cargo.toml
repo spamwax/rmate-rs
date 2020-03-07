@@ -10,3 +10,6 @@ edition = "2018"
 socket2 = { version = "0.3.10", features = ["unix", "reuseport", "pair"] }
 dirs = "2.0"
 tempfile = "3"
+
+[profile.release]
+# lto = true
