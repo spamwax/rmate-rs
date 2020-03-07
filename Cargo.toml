@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 socket2 = { version = "0.3.10", features = ["unix", "reuseport", "pair"] }
 dirs = "2.0"
+tempfile = "3"
