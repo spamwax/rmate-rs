@@ -4,28 +4,32 @@ use std::ffi::OsString;
 use std::fs::File;
 use std::fs::{canonicalize, metadata};
 use std::io::{BufRead, BufReader};
-use std::io::{Error, ErrorKind};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-fn main() -> Result<(), std::io::Error> {
+fn main() -> Result<(), String> {
     let args: Vec<OsString> = env::args_os().collect();
     if args.len() < 2 {
-        return Err(Error::new(ErrorKind::Other, "no input file name"));
+        return Err("no input file name".to_string());
     }
     let fname = &args[1];
-    let filename_canon = canonicalize(fname)?;
-    let file_name = filename_canon.file_name().ok_or(Error::new(
-        ErrorKind::Other,
-        "no valid file name found in input argument",
-    ))?;
-    let md = metadata(fname)?;
+    let socket = open_file_in_remote(fname)?;
+    handle_remote(socket);
+    Ok(())
+}
+
+fn open_file_in_remote(fname: &OsString) -> Result<socket2::Socket, String> {
+    let filename_canon = canonicalize(fname).map_err(|e| e.to_string())?;
+    let file_name = filename_canon
+        .file_name()
+        .ok_or("no valid file name found in input argument".to_string())?;
+    let file_name_string = file_name.to_string_lossy();
+
+    let md = metadata(fname).map_err(|e| e.to_string())?;
     if md.is_dir() {
-        return Err(Error::new(
-            ErrorKind::Other,
-            "openning directory not supported",
-        ));
+        return Err("openning directory not supported".to_string());
     }
     let filesize = md.len();
+
     let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
     let port = env::var("RMATE_PORT")
         .unwrap_or("52696".to_string())
@@ -33,47 +37,52 @@ fn main() -> Result<(), std::io::Error> {
         .unwrap();
 
     let addr_srv = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port).into();
-    println!("About to connect to $RMATE_PORT");
+    println!("About to connect to {:?}", addr_srv);
     socket.connect(&addr_srv).unwrap();
     println!(
         "\n\tmy address: {:?}\n\tremote address {:?}\n",
         socket.local_addr().unwrap(),
         socket.peer_addr().unwrap()
     );
-    let n = socket.send("open\n".as_bytes()).unwrap();
-    let n = socket
+
+    socket
+        .send("open\n".as_bytes())
+        .map_err(|e| e.to_string())?;
+    socket
         .send(
-            ["display-name: ", &file_name.to_string_lossy(), "\n"]
+            ["display-name: ", &file_name_string, "\n"]
                 .concat()
                 .as_bytes(),
         )
-        .unwrap();
-    let n = socket
+        .map_err(|e| e.to_string())?;
+    socket
         .send(
             ["real-path: ", &filename_canon.to_string_lossy(), "\n"]
                 .concat()
                 .as_bytes(),
         )
-        .unwrap();
-    let _n = socket.send("data-on-save: yes\n".as_bytes()).unwrap();
-    let n = socket.send("re-activate: yes\n".as_bytes()).unwrap();
-    let n = socket
-        .send(
-            ["token: ", &file_name.to_string_lossy(), "\n"]
-                .concat()
-                .as_bytes(),
-        )
-        .unwrap();
-    let n = socket
-        .send(format!("data: {}\n", filesize).as_bytes())
-        .unwrap();
+        .map_err(|e| e.to_string())?;
+    socket
+        .send("data-on-save: yes\n".as_bytes())
+        .map_err(|e| e.to_string())?;
+    socket
+        .send("re-activate: yes\n".as_bytes())
+        .map_err(|e| e.to_string())?;
+    socket
+        .send(["token: ", &file_name_string, "\n"].concat().as_bytes())
+        .map_err(|e| e.to_string())?;
+    let mut data_size = String::with_capacity(1024usize);
+    data_size.push_str("data: ");
+    data_size.push_str(&filesize.to_string());
+    data_size.push_str("\n");
+    socket
+        .send(data_size.as_bytes())
+        .map_err(|e| e.to_string())?;
 
-    // let mut buf = String::with_capacity(1024);
-    // .map_err(|e| e.to_string())
     let mut total = 0usize;
     let mut buf = String::with_capacity(0x1000);
     {
-        let f = File::open(filename_canon)?;
+        let f = File::open(filename_canon).map_err(|e| e.to_string())?;
         let mut buf_reader = BufReader::with_capacity(0x1000, f);
         while let Ok(r) = buf_reader.read_line(&mut buf) {
             if r == 0 {
@@ -89,37 +98,84 @@ fn main() -> Result<(), std::io::Error> {
         }
     }
 
-    let _n = socket.send("\n.\n".as_bytes()).unwrap();
+    let _n = socket.send("\n.\n".as_bytes()).map_err(|e| e.to_string())?;
     println!(" read {} bytes from file", total);
-
-    // socket.listen(128).unwrap();
-    let mut b = [0u8; 100];
+    let mut b = [0u8; 512];
     println!("waiting...");
-    let _r = socket.recv(&mut b);
-    println!("got shit: {:?}", String::from_utf8_lossy(&b));
+    let n = socket.recv(&mut b).map_err(|e| e.to_string())?;
+    assert!(n < 512);
+    println!(
+        "Connected to remote app: {}",
+        String::from_utf8_lossy(&b[0..n]).trim()
+    );
+    Ok(socket)
+}
+
+fn handle_remote(socket: socket2::Socket) -> Result<(), std::io::Error> {
+    let mut total = 0usize;
     println!("waiting 2...");
-    let mut myline = Vec::with_capacity(8 * 1024usize);
+    let mut myline = String::with_capacity(128);
     let mut buf_reader = BufReader::new(&socket);
-    total = 0;
-    let mut c = 0;
-    while let Ok(n) = buf_reader.read_until(b'\n', &mut myline) {
-        c += 1;
-        if n == 0 {
-            break;
-        }
+
+    // Wait for commands from remote app
+    while buf_reader.read_line(&mut myline)? != 0 {
         println!(
-            "got shit 2: {:?}  ({}, {}, {})",
-            String::from_utf8_lossy(myline.as_ref()),
-            n,
-            c,
-            total
+            "}}}}}}}}\nmyline >{}<\nmyline.trim >>{}<<",
+            myline,
+            myline.trim()
         );
-        myline.clear();
-        if c > 3 {
-            total += n;
+        match myline.trim() {
+            "close" => {
+                println!("--> in 'close'");
+                myline.clear();
+                while let Ok(n) = buf_reader.read_line(&mut myline) {
+                    if n == 0 {
+                        break;
+                    }
+                    println!("-- {}", myline.trim());
+                    myline.clear();
+                }
+            }
+            "save" => {
+                println!("--> in 'save'");
+                myline.clear();
+                buf_reader.read_line(&mut myline)?;
+                println!("- {}", myline.trim());
+                myline.clear();
+                buf_reader.read_line(&mut myline)?;
+                println!("- {}", myline.trim());
+                let data_size = myline.rsplitn(2, ": ").collect::<Vec<&str>>()[0]
+                    .trim()
+                    .parse::<usize>()
+                    .unwrap();
+                myline.clear();
+                total = 0;
+                while let Ok(n) = buf_reader.read_line(&mut myline) {
+                    if n == 0 {
+                        break;
+                    }
+                    total += n;
+                    println!("* {:?} ({}, {})", myline, myline.len(), total);
+                    myline.clear();
+                    if total >= data_size {
+                        println!("breaking out of save");
+                        break;
+                    }
+                }
+            }
+            _ => {
+                if myline.trim() == "" {
+                    println!("empty line");
+                    continue;
+                } else {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "unrecognized shit",
+                    ));
+                }
+            }
         }
     }
     println!("bytes: {}", total);
-
     Ok(())
 }
