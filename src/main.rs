@@ -3,7 +3,7 @@ use std::env;
 use std::ffi::OsString;
 use std::fs::File;
 use std::fs::{canonicalize, metadata};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 fn main() -> Result<(), String> {
@@ -80,26 +80,40 @@ fn open_file_in_remote(fname: &OsString) -> Result<socket2::Socket, String> {
         .map_err(|e| e.to_string())?;
 
     let mut total = 0usize;
-    let mut buf = String::with_capacity(0x1000);
+    let bsize = socket.recv_buffer_size().unwrap();
+    println!("hoho:: {}", bsize);
+
     {
+        let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
         let f = File::open(filename_canon).map_err(|e| e.to_string())?;
-        let mut buf_reader = BufReader::with_capacity(0x1000, f);
-        while let Ok(r) = buf_reader.read_line(&mut buf) {
-            if r == 0 {
-                println!("read last line");
+        let mut buf_reader = BufReader::with_capacity(bsize, f);
+        loop {
+            let buffer = buf_reader.fill_buf().map_err(|e| e.to_string())?;
+            let length = buffer.len();
+            if length == 0 {
+                println!("read all of file");
                 break;
             }
-            // println!("******************************");
-            // println!("{}\n", buf);
-            total += r;
-            let n = socket.send(buf.as_bytes()).unwrap();
-            assert_eq!(buf.as_bytes().len(), n);
-            buf.clear();
+            total += length;
+            println!("sent {} ({})", length, total);
+            buf_writer.write_all(&buffer).map_err(|e| e.to_string())?;
+            buf_reader.consume(length);
         }
+        // let mut buf = String::with_capacity(0x1000);
+        // while let Ok(r) = buf_reader.read_line(&mut buf) {
+        //     if r == 0 {
+        //         println!("read last line");
+        //         break;
+        //     }
+        //     total += r;
+        //     let n = socket.send(buf.as_bytes()).unwrap();
+        //     assert_eq!(buf.as_bytes().len(), n);
+        //     buf.clear();
+        // }
     }
 
     let _n = socket.send("\n.\n".as_bytes()).map_err(|e| e.to_string())?;
-    println!(" read {} bytes from file", total);
+    println!(" read {} bytes from file (file size: {})", total, filesize);
     let mut b = [0u8; 512];
     println!("waiting...");
     let n = socket.recv(&mut b).map_err(|e| e.to_string())?;
