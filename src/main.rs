@@ -13,8 +13,13 @@ use std::path::PathBuf;
 // TODO: read config files (/etc/rmate.conf)? <08-03-20, yourname> //
 // TODO: warn user about openning read-only files <08-03-20, yourname> //
 
+mod settings;
+use settings::Settings;
+
 fn main() -> Result<(), String> {
     let args: Vec<OsString> = env::args_os().collect();
+    let mut _s = Settings::new(52696);
+
     if args.len() < 2 {
         return Err("no input file name".to_string());
     }
