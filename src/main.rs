@@ -53,9 +53,9 @@ fn open_file_in_remote(fname: &OsString) -> Result<(socket2::Socket, PathBuf), S
     );
 
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
-    print!("hohoho: {}\n", bsize);
+    print!("recv buffer: {}\n", bsize);
     let bsize = socket.send_buffer_size().map_err(|e| e.to_string())?;
-    print!("hohoho: {}\n", bsize);
+    print!("send buffer: {}\n", bsize);
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
         buf_writer
