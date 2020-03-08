@@ -3,9 +3,15 @@ use std::env;
 use std::ffi::OsString;
 use std::fs::File;
 use std::fs::{canonicalize, metadata};
-use std::io::{BufRead, BufReader, BufWriter, Read, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+
+// TODO: make a backup copy of files being saved? <08-03-20, yourname> //
+// TODO: create struct to store opsions for each file opened <08-03-20, yourname> //
+// TODO: use clap for argument parsing <08-03-20, yourname> //
+// TODO: read config files (/etc/rmate.conf)? <08-03-20, yourname> //
+// TODO: warn user about openning read-only files <08-03-20, yourname> //
 
 fn main() -> Result<(), String> {
     let args: Vec<OsString> = env::args_os().collect();
@@ -46,46 +52,32 @@ fn open_file_in_remote(fname: &OsString) -> Result<(socket2::Socket, PathBuf), S
         socket.peer_addr().unwrap()
     );
 
-    socket
-        .send("open\n".as_bytes())
-        .map_err(|e| e.to_string())?;
-    socket
-        .send(
-            ["display-name: ", &file_name_string, "\n"]
-                .concat()
-                .as_bytes(),
-        )
-        .map_err(|e| e.to_string())?;
-    socket
-        .send(
-            ["real-path: ", &filename_canon.to_string_lossy(), "\n"]
-                .concat()
-                .as_bytes(),
-        )
-        .map_err(|e| e.to_string())?;
-    socket
-        .send("data-on-save: yes\n".as_bytes())
-        .map_err(|e| e.to_string())?;
-    socket
-        .send("re-activate: yes\n".as_bytes())
-        .map_err(|e| e.to_string())?;
-    socket
-        .send(["token: ", &file_name_string, "\n"].concat().as_bytes())
-        .map_err(|e| e.to_string())?;
-    let mut data_size = String::with_capacity(1024usize);
-    data_size.push_str("data: ");
-    data_size.push_str(&filesize.to_string());
-    data_size.push_str("\n");
-    socket
-        .send(data_size.as_bytes())
-        .map_err(|e| e.to_string())?;
-
-    let mut total = 0usize;
-    let bsize = socket.recv_buffer_size().unwrap();
+    let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
+    print!("hohoho: {}\n", bsize);
+    let bsize = socket.send_buffer_size().map_err(|e| e.to_string())?;
+    print!("hohoho: {}\n", bsize);
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
-        let f = File::open(&filename_canon).map_err(|e| e.to_string())?;
-        let mut buf_reader = BufReader::with_capacity(bsize, f);
+        buf_writer
+            .write_fmt(format_args!(
+                concat!(
+                    "open\ndisplay-name: {}\n",
+                    "real-path: {}\ndata-on-save: yes\nre-activate: yes\n",
+                    "token: {}\ndata: {}\n"
+                ),
+                &file_name_string,
+                &filename_canon.to_string_lossy(),
+                &file_name_string,
+                &filesize.to_string()
+            ))
+            .map_err(|e| e.to_string())?;
+    }
+
+    let mut total = 0usize;
+    {
+        let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
+        let fp = File::open(&filename_canon).map_err(|e| e.to_string())?;
+        let mut buf_reader = BufReader::with_capacity(bsize, fp);
         loop {
             let buffer = buf_reader.fill_buf().map_err(|e| e.to_string())?;
             let length = buffer.len();
@@ -117,7 +109,7 @@ fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(),
     let mut total = 0usize;
     println!("waiting 2...");
     let mut myline = String::with_capacity(128);
-    let bsize = socket.recv_buffer_size().unwrap();
+    let bsize = socket.recv_buffer_size()?;
     println!("fofofo:: {}", bsize);
     let mut buf_reader = BufReader::with_capacity(bsize, &socket);
 
@@ -157,16 +149,12 @@ fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(),
                 println!("- {}", data_size);
                 myline.clear();
                 total = 0;
-                // let fp = File::create("foo.h").unwrap();
 
                 let rand_temp_file = tempfile::Builder::new()
                     .prefix(".rmate_tmp_")
                     .rand_bytes(8)
-                    .tempfile_in(
-                        dirs::home_dir()
-                            .or_else(|| Some(env::temp_dir()))
-                            .unwrap_or(PathBuf::from(".")),
-                    )?;
+                    .suffix(&"~")
+                    .tempfile()?;
                 let random_name = rand_temp_file.path();
                 println!("temp file: {:?}", random_name);
                 let mut buf_writer = BufWriter::with_capacity(bsize, &rand_temp_file);
@@ -190,8 +178,9 @@ fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(),
                 buf_writer.flush()?;
 
                 println!("Saving: {}", filename_canon.to_str().unwrap());
-                if let Err(e) = std::fs::rename(random_name, &filename_canon) {
-                    eprintln!("  Error saving: {}", e.to_string());
+                match std::fs::copy(random_name, &filename_canon) {
+                    Err(e) => eprintln!(" Error saving: {}", e.to_string()),
+                    Ok(size) => assert_eq!(data_size as u64, size),
                 }
             }
             _ => {
