@@ -168,12 +168,10 @@ fn handle_remote(socket: socket2::Socket, filename_canon: PathBuf) -> Result<(),
                     let length = buffer.len();
                     total += length;
                     if total >= data_size {
-                        // println!("{}", String::from_utf8_lossy(&buffer.clone()));
                         let corrected_last_lenght = length - (total - data_size);
                         assert_eq!(1, total - data_size);
                         buf_writer.write_all(&buffer[..corrected_last_lenght])?;
                         buf_reader.consume(corrected_last_lenght);
-                        // println!("breaking out of save {} / {}", data_size, total);
                         break;
                     } else {
                         buf_writer.write_all(&buffer)?;
