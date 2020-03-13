@@ -1,5 +1,8 @@
+use rand;
 use std::ffi::OsString;
+use std::fs::Metadata;
 use std::path::PathBuf;
+use tempfile;
 
 pub struct Settings {
     pub host: String,
@@ -17,7 +20,9 @@ pub(crate) struct OpenedBuffer {
     pub(crate) path: PathBuf,
     pub(crate) name: OsString,
     pub(crate) canwrite: bool,
-    pub(crate) size: usize,
+    pub(crate) metadata: Metadata,
+    pub(crate) temp_file: tempfile::NamedTempFile,
+    pub(crate) size: u64,
 }
 
 // type MyItems<String, OpenedBuffers> = HashMap<String, OpenedBuffers>;
