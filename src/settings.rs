@@ -1,6 +1,6 @@
 use rand;
 use std::ffi::OsString;
-use std::fs::Metadata;
+use std::fs::{File, Metadata};
 use std::path::PathBuf;
 use tempfile;
 
@@ -23,7 +23,7 @@ pub(crate) struct OpenedBuffer {
     pub(crate) name: OsString,
     pub(crate) canwrite: bool,
     pub(crate) metadata: Metadata,
-    pub(crate) temp_file: tempfile::NamedTempFile,
+    pub(crate) temp_file: File,
     pub(crate) size: u64,
 }
 

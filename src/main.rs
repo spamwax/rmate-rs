@@ -67,19 +67,7 @@ fn open_file_in_remote(
         }
         let canwrite = !md.permissions().readonly();
         let filesize = md.len();
-        let rand_temp_file = tempfile::Builder::new()
-            .prefix(
-                [
-                    ".rmate_tmp___",
-                    file_name_string.to_str().unwrap_or("use_utf8_plz"),
-                    "___",
-                ]
-                .concat()
-                .as_str(),
-            )
-            .rand_bytes(16)
-            .tempfile()
-            .map_err(|e| e.to_string())?;
+        let rand_temp_file = tempfile::tempfile().map_err(|e| e.to_string())?;
         let mut token = String::with_capacity(512);
         base64::encode_config_buf(
             filename_canon.to_string_lossy().as_bytes(),
@@ -323,7 +311,6 @@ fn write_to_disk(
     let mut total = 0usize;
     {
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
-        println!("temp file name: {:?}", rand_temp_file.path());
         rand_temp_file.seek(SeekFrom::Start(0))?;
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
         loop {
@@ -332,7 +319,6 @@ fn write_to_disk(
             total += length;
             if total >= data_size {
                 let corrected_last_length = length - (total - data_size);
-                // assert_eq!(1, total - data_size);
                 println!(
                     "total read: {}, expected size: {}, diff: {}",
                     total,
@@ -358,31 +344,29 @@ fn write_to_disk(
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
         rand_temp_file.seek(SeekFrom::Start(0))?;
     }
-    let fn_canon = &opened_buffers
-        .get(&token)
-        .as_ref()
+
+    opened_buffers
+        .get_mut(&token)
         .ok_or(std::io::Error::new(
             std::io::ErrorKind::Other,
             "can't find the open buffer for saving",
-        ))?
-        .path;
+        ))
+        .and_then(|opened_buffer| {
+            let fn_canon = opened_buffer.path.as_path();
+            let fp = OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .open(fn_canon)?;
+            let mut temp_file = File::try_clone(&opened_buffer.temp_file)?;
+            temp_file.seek(SeekFrom::Start(0))?;
+            let temp_reader_sized = temp_file.take(data_size as u64);
 
-    OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(fn_canon)
-        .and_then(|fp| {
-            let temp_reader_sized = opened_buffers
-                .get(&token)
-                .unwrap()
-                .temp_file
-                .as_file()
-                .take(data_size as u64);
             let mut buffer_writer = BufWriter::new(fp);
             let mut buffer_reader = BufReader::new(temp_reader_sized);
-            std::io::copy(&mut buffer_reader, &mut buffer_writer)
+            let written_size = std::io::copy(&mut buffer_reader, &mut buffer_writer)?;
+            Ok((written_size, fn_canon))
         })
-        .and_then(|written_size| {
+        .and_then(|(written_size, fn_canon)| {
             assert_eq!(data_size as u64, written_size);
             println!("Saved to {}", fn_canon.to_string_lossy());
             Ok(())
