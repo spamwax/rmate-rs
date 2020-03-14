@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::env;
 use std::ffi::OsString;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::fs::{canonicalize, metadata};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader, BufWriter, SeekFrom, Write};
@@ -321,8 +322,10 @@ fn write_to_disk(
     let mut total = 0usize;
     {
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
+        print!("temp file name: {:?}", rand_temp_file.path());
         rand_temp_file.seek(SeekFrom::Start(0))?;
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
+        buf_writer.seek(SeekFrom::Start(0))?;
         loop {
             let buffer = buffer_reader.fill_buf()?;
             let length = buffer.len();
@@ -332,37 +335,45 @@ fn write_to_disk(
                 assert_eq!(1, total - data_size);
                 buf_writer.write_all(&buffer[..corrected_last_length])?;
                 buffer_reader.consume(corrected_last_length);
+                buf_writer.flush()?;
                 break;
             } else {
                 buf_writer.write_all(&buffer)?;
                 buffer_reader.consume(length);
             }
         }
-        buf_writer.flush()?;
-        buf_writer.flush()?;
+        buf_writer.seek(SeekFrom::Start(0))?;
     }
-    let random_name_pathbuf = opened_buffers
-        .get(&token)
-        .unwrap()
-        .temp_file
-        .path()
-        .to_path_buf();
-    println!("temp file: {:?}", random_name_pathbuf);
-    let fn_canon = opened_buffers
+    let fn_canon = &opened_buffers
         .get(&token)
         .as_ref()
         .ok_or(std::io::Error::new(
             std::io::ErrorKind::Other,
             "can't find the open buffer for saving",
         ))?
-        .path
-        .as_path();
-    match std::fs::copy(random_name_pathbuf, fn_canon) {
-        Err(e) => eprintln!(" Error saving: {}", e.to_string()),
-        Ok(size) => {
-            assert_eq!(data_size as u64, size);
-            println!("Saved: {}", fn_canon.to_string_lossy());
-        }
-    }
-    Ok(())
+        .path;
+
+    // Open the file we are supposed to actuallly save to, and copy
+    // content of temp. file to it. ensure we only write number of bytes that
+    // Sublime Text has sent us.
+    OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(fn_canon)
+        .and_then(|fp| {
+            let temp_reader_sized = opened_buffers
+                .get(&token)
+                .unwrap()
+                .temp_file
+                .as_file()
+                .take(data_size as u64);
+            let mut buffer_writer = BufWriter::new(fp);
+            let mut buffer_reader = BufReader::new(temp_reader_sized);
+            std::io::copy(&mut buffer_reader, &mut buffer_writer)
+        })
+        .and_then(|written_size| {
+            assert_eq!(data_size as u64, written_size);
+            print!("Saved to {}", fn_canon.to_string_lossy());
+            Ok(())
+        })
 }
