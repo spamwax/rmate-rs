@@ -70,14 +70,14 @@ fn open_file_in_remote(
         let rand_temp_file = tempfile::Builder::new()
             .prefix(
                 [
-                    ".rmate_tmp_",
+                    ".rmate_tmp___",
                     file_name_string.to_str().unwrap_or("use_utf8_plz"),
+                    "___",
                 ]
                 .concat()
                 .as_str(),
             )
-            .rand_bytes(8)
-            .suffix(&"~")
+            .rand_bytes(16)
             .tempfile()
             .map_err(|e| e.to_string())?;
         let mut token = String::with_capacity(512);
@@ -198,7 +198,7 @@ fn handle_remote(
     // Wait for commands from remote app
     while buffer_reader.read_line(&mut myline)? != 0 {
         println!(
-            "{{{{{{{{{{}}}}}}}}}}}}\nmyline >{}<\nmyline.trim >>{}<<",
+            "\n\n{{{{{{{{{{}}}}}}}}}}\nmyline >{}<\nmyline.trim >>{}<<",
             myline,
             myline.trim()
         );
@@ -322,7 +322,7 @@ fn write_to_disk(
     let mut total = 0usize;
     {
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
-        print!("temp file name: {:?}", rand_temp_file.path());
+        println!("temp file name: {:?}", rand_temp_file.path());
         rand_temp_file.seek(SeekFrom::Start(0))?;
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
         buf_writer.seek(SeekFrom::Start(0))?;
@@ -373,7 +373,7 @@ fn write_to_disk(
         })
         .and_then(|written_size| {
             assert_eq!(data_size as u64, written_size);
-            print!("Saved to {}", fn_canon.to_string_lossy());
+            println!("Saved to {}", fn_canon.to_string_lossy());
             Ok(())
         })
 }
