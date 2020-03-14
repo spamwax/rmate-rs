@@ -4,6 +4,7 @@ use std::fs::Metadata;
 use std::path::PathBuf;
 use tempfile;
 
+#[derive(Debug)]
 pub struct Settings {
     pub host: String,
     pub port: u16,
@@ -16,6 +17,7 @@ pub struct Settings {
 
 // use std::collections::hash_map::HashMap;
 
+#[derive(Debug)]
 pub(crate) struct OpenedBuffer {
     pub(crate) path: PathBuf,
     pub(crate) name: OsString,

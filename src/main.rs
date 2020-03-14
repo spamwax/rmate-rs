@@ -24,7 +24,7 @@ use settings::Settings;
 fn main() -> Result<(), String> {
     let args: Vec<OsString> = env::args_os().collect();
     let mut s = Settings {
-        host: "127.0.0.1".to_string(),
+        host: "localhost".to_string(),
         port: env::var("RMATE_PORT")
             .unwrap_or("52698".to_string())
             .parse::<u16>()
@@ -97,6 +97,7 @@ fn open_file_in_remote(
                 size: filesize,
             },
         );
+        print!("buffers: {:?}\n", &buffers);
     }
 
     let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
@@ -325,14 +326,19 @@ fn write_to_disk(
         println!("temp file name: {:?}", rand_temp_file.path());
         rand_temp_file.seek(SeekFrom::Start(0))?;
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
-        buf_writer.seek(SeekFrom::Start(0))?;
         loop {
             let buffer = buffer_reader.fill_buf()?;
             let length = buffer.len();
             total += length;
             if total >= data_size {
                 let corrected_last_length = length - (total - data_size);
-                assert_eq!(1, total - data_size);
+                // assert_eq!(1, total - data_size);
+                println!(
+                    "total read: {}, expected size: {}, diff: {}",
+                    total,
+                    data_size,
+                    total - data_size
+                );
                 buf_writer.write_all(&buffer[..corrected_last_length])?;
                 buffer_reader.consume(corrected_last_length);
                 buf_writer.flush()?;
@@ -342,7 +348,15 @@ fn write_to_disk(
                 buffer_reader.consume(length);
             }
         }
-        buf_writer.seek(SeekFrom::Start(0))?;
+    }
+
+    // Open the file we are supposed to actuallly save to, and copy
+    // content of temp. file to it. ensure we only write number of bytes that
+    // Sublime Text has sent us.
+    {
+        // Move file cursor of temp. file to beginning.
+        let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
+        rand_temp_file.seek(SeekFrom::Start(0))?;
     }
     let fn_canon = &opened_buffers
         .get(&token)
@@ -353,9 +367,6 @@ fn write_to_disk(
         ))?
         .path;
 
-    // Open the file we are supposed to actuallly save to, and copy
-    // content of temp. file to it. ensure we only write number of bytes that
-    // Sublime Text has sent us.
     OpenOptions::new()
         .write(true)
         .truncate(true)
