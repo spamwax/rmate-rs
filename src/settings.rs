@@ -17,8 +17,8 @@ pub struct Settings {
 
 #[derive(Debug)]
 pub(crate) struct OpenedBuffer {
-    pub(crate) path: PathBuf,
-    pub(crate) name: OsString,
+    pub(crate) canon_path: PathBuf,
+    pub(crate) display_name: OsString,
     pub(crate) canwrite: bool,
     pub(crate) metadata: Metadata,
     pub(crate) temp_file: File,

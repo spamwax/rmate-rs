@@ -41,6 +41,8 @@ fn main() -> Result<(), String> {
     }
     let fname = args[1].clone();
     s.files.push(fname);
+    let fname = args[2].clone();
+    s.files.push(fname);
     let (socket, buffers) = open_file_in_remote(&s)?;
     handle_remote(socket, buffers).map_err(|e| e.to_string())?;
     Ok(())
@@ -68,25 +70,25 @@ fn open_file_in_remote(
         let canwrite = !md.permissions().readonly();
         let filesize = md.len();
         let rand_temp_file = tempfile::tempfile().map_err(|e| e.to_string())?;
-        let mut token = String::with_capacity(512);
+        let mut encoded_fn = String::with_capacity(512);
         base64::encode_config_buf(
             filename_canon.to_string_lossy().as_bytes(),
             base64::STANDARD,
-            &mut token,
+            &mut encoded_fn,
         );
         buffers.insert(
-            token,
+            file_name_string.to_string_lossy().into_owned(),
             OpenedBuffer {
-                path: filename_canon,
-                name: file_name_string.clone(),
+                canon_path: filename_canon,
+                display_name: file_name_string.clone(),
                 canwrite: canwrite,
                 metadata: md,
                 temp_file: rand_temp_file,
                 size: filesize,
             },
         );
-        print!("buffers: {:?}\n", &buffers);
     }
+    print!("buffers: {:?}\n", &buffers);
 
     let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
 
@@ -108,9 +110,10 @@ fn open_file_in_remote(
     print!("recv buffer: {}\n", bsize);
     let bsize = socket.send_buffer_size().map_err(|e| e.to_string())?;
     print!("send buffer: {}\n", bsize);
+    let mut total = 0usize;
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
-        for buffer in buffers.iter() {
+        for (token, opened_buffer) in buffers.iter() {
             buf_writer
                 .write_fmt(format_args!(
                     concat!(
@@ -118,24 +121,13 @@ fn open_file_in_remote(
                         "real-path: {}\ndata-on-save: yes\nre-activate: yes\n",
                         "token: {}\ndata: {}\n"
                     ),
-                    buffer.1.name.to_string_lossy(),
-                    buffer.1.path.to_string_lossy(),
-                    buffer.0.to_string(),
-                    buffer.1.size,
-                    // &file_name_string,
-                    // &filename_canon.to_string_lossy(),
-                    // &file_name_string,
-                    // &filesize.to_string()
+                    opened_buffer.display_name.to_string_lossy(),
+                    opened_buffer.canon_path.to_string_lossy(),
+                    token,
+                    opened_buffer.size,
                 ))
                 .map_err(|e| e.to_string())?;
-        }
-    }
-
-    let mut total = 0usize;
-    {
-        let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
-        for opened_buffer in buffers.iter() {
-            let fp = File::open(&opened_buffer.1.path).map_err(|e| e.to_string())?;
+            let fp = File::open(&opened_buffer.canon_path).map_err(|e| e.to_string())?;
             let mut buf_reader = BufReader::with_capacity(bsize, fp);
             loop {
                 let buffer = buf_reader.fill_buf().map_err(|e| e.to_string())?;
@@ -143,7 +135,7 @@ fn open_file_in_remote(
                 if length == 0 {
                     println!(
                         "read all of file: {}",
-                        opened_buffer.1.path.to_string_lossy()
+                        opened_buffer.canon_path.to_string_lossy()
                     );
                     break;
                 }
@@ -157,7 +149,7 @@ fn open_file_in_remote(
                 .map_err(|e| e.to_string());
             println!(
                 " read {} bytes from file (file size: {})",
-                total, opened_buffer.1.size
+                total, opened_buffer.size
             );
         }
     }
@@ -192,14 +184,17 @@ fn handle_remote(
             myline.trim()
         );
         match myline.trim() {
+            // close the buffer for a file
             "close" => {
                 println!("--> in 'close'");
+                myline.clear();
                 close_buffer(&mut opened_buffers, &mut buffer_reader);
             }
+            // save the buffer to a file
             "save" => {
                 println!("--> in 'save'");
                 myline.clear();
-                total = write_to_disk(&mut opened_buffers, &mut buffer_reader)?;
+                total += write_to_disk(&mut opened_buffers, &mut buffer_reader)?;
             }
             _ => {
                 if myline.trim() == "" {
@@ -229,9 +224,11 @@ fn close_buffer(
             println!("breaking out of close");
             break;
         }
-        let command: Vec<&str> = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>();
-        // println!("recv cmd: {:?}", command);
-        opened_buffers.remove_entry(command[0]);
+        let command: Vec<&str> = myline.trim().splitn(2, ":").collect::<Vec<&str>>();
+        println!("command:\t{:?}", command);
+        // println!("recv token:\t{:?}", command[1].trim());
+        let (_, closed_buffer) = opened_buffers.remove_entry(command[1].trim()).unwrap();
+        print!("Closed: {:?}\n", closed_buffer.canon_path.as_os_str());
         myline.clear();
     }
 }
@@ -255,6 +252,11 @@ fn write_to_disk(
         .unwrap();
     println!("size: {}", data_size);
     myline.clear();
+    println!(
+        "token: {:?}\ndisplay-name: {:?}",
+        token,
+        opened_buffers.get(&token).unwrap().display_name
+    );
     let mut total = 0usize;
     {
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
@@ -299,7 +301,7 @@ fn write_to_disk(
             "can't find the open buffer for saving",
         ))
         .and_then(|opened_buffer| {
-            let fn_canon = opened_buffer.path.as_path();
+            let fn_canon = opened_buffer.canon_path.as_path();
             let fp = OpenOptions::new()
                 .write(true)
                 .truncate(true)
