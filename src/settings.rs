@@ -1,8 +1,6 @@
-use rand;
 use std::ffi::OsString;
 use std::fs::{File, Metadata};
 use std::path::PathBuf;
-use tempfile;
 
 #[derive(Debug)]
 pub struct Settings {

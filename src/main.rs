@@ -8,8 +8,8 @@ use std::fs::OpenOptions;
 use std::fs::{canonicalize, metadata};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader, BufWriter, SeekFrom, Write};
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::PathBuf;
+use std::net::{IpAddr, SocketAddr};
+// use std::path::PathBuf;
 
 // TODO: make a backup copy of files being saved? <08-03-20, yourname> //
 // TODO: create struct to store opsions for each file opened <08-03-20, yourname> //
@@ -177,8 +177,8 @@ fn handle_remote(
     socket: socket2::Socket,
     mut opened_buffers: HashMap<String, OpenedBuffer>,
 ) -> Result<(), std::io::Error> {
-    let mut total = 0usize;
-    println!("waiting 2...");
+    let mut total = 0;
+    println!("waiting for editor's instructions...");
     let mut myline = String::with_capacity(128);
     let bsize = socket.recv_buffer_size()?;
     println!("fofofo:: {}", bsize);
@@ -195,64 +195,11 @@ fn handle_remote(
             "close" => {
                 println!("--> in 'close'");
                 close_buffer(&mut opened_buffers, &mut buffer_reader);
-                // myline.clear();
-                // while let Ok(n) = buffer_reader.read_line(&mut myline) {
-                //     if n == 0 || myline.trim() == "" {
-                //         println!("breaking out of close");
-                //         break;
-                //     }
-                //     let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0].trim();
-                //     println!("-- {}", token);
-                //     myline.clear();
-                // }
             }
             "save" => {
                 println!("--> in 'save'");
                 myline.clear();
-                write_to_disk(&mut opened_buffers, &mut buffer_reader)?;
-                // let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0].trim();
-
-                // println!("- >{}<", token);
-                // myline.clear();
-                // buffer_reader.read_line(&mut myline)?;
-                // let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
-                //     .trim()
-                //     .parse::<usize>()
-                //     .unwrap();
-                // println!("- {}", data_size);
-                // myline.clear();
-                // total = 0;
-
-                // let token: &str = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0]
-                //     .trim()
-                //     .clone();
-                // let rand_temp_file = &opened_buffers.get(token).unwrap().tempFile;
-                // let random_name = rand_temp_file.path();
-                // println!("temp file: {:?}", random_name);
-                // let mut buf_writer = BufWriter::with_capacity(bsize, rand_temp_file);
-                // loop {
-                //     let buffer = buffer_reader.fill_buf()?;
-                //     let length = buffer.len();
-                //     total += length;
-                //     if total >= data_size {
-                //         let corrected_last_length = length - (total - data_size);
-                //         assert_eq!(1, total - data_size);
-                //         buf_writer.write_all(&buffer[..corrected_last_length])?;
-                //         buffer_reader.consume(corrected_last_length);
-                //         break;
-                //     } else {
-                //         buf_writer.write_all(&buffer)?;
-                //         buffer_reader.consume(length);
-                //     }
-                // }
-                // buf_writer.flush()?;
-
-                // let fn_canon = opened_buffers.get(token).as_ref().unwrap().path.as_path();
-                // println!("Saved: {}", fn_canon.to_string_lossy());
-                // match std::fs::copy(random_name, fn_canon) {
-                //     Err(e) => eprintln!(" Error saving: {}", e.to_string()),
-                //     Ok(size) => assert_eq!(data_size as u64, size),
-                // }
+                total = write_to_disk(&mut opened_buffers, &mut buffer_reader)?;
             }
             _ => {
                 if myline.trim() == "" {
@@ -267,7 +214,7 @@ fn handle_remote(
             }
         }
     }
-    println!("bytes: {}", total);
+    println!("total bytes: {}", total);
     Ok(())
 }
 
@@ -283,7 +230,7 @@ fn close_buffer(
             break;
         }
         let command: Vec<&str> = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>();
-        println!("recv cmd: {:?}", command);
+        // println!("recv cmd: {:?}", command);
         opened_buffers.remove_entry(command[0]);
         myline.clear();
     }
@@ -292,21 +239,21 @@ fn close_buffer(
 fn write_to_disk(
     opened_buffers: &mut HashMap<String, OpenedBuffer>,
     buffer_reader: &mut BufReader<&socket2::Socket>,
-) -> Result<(), std::io::Error> {
+) -> Result<usize, std::io::Error> {
     let mut myline = String::with_capacity(128);
     buffer_reader.read_line(&mut myline)?;
     let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0]
         .trim()
         .to_string();
     myline.clear();
-    println!("- >{}<", token);
+    println!("token: >{}<", token);
 
     buffer_reader.read_line(&mut myline)?;
     let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
         .trim()
         .parse::<usize>()
         .unwrap();
-    println!("- {}", data_size);
+    println!("size: {}", data_size);
     myline.clear();
     let mut total = 0usize;
     {
@@ -369,6 +316,6 @@ fn write_to_disk(
         .and_then(|(written_size, fn_canon)| {
             assert_eq!(data_size as u64, written_size);
             println!("Saved to {}", fn_canon.to_string_lossy());
-            Ok(())
+            Ok(written_size as usize)
         })
 }
