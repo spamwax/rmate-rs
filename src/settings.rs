@@ -3,8 +3,6 @@ use std::fs::{File, Metadata};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-// #[structopt(short, long, env = "RMATE_PORT", default_value = "52698")]
-
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rmate", about = "rmate ♥ Rust (TextMate & Sublime Text)")]
 pub(crate) struct Settings {
@@ -55,22 +53,11 @@ pub(crate) struct OpenedBuffer {
     pub(crate) size: u64,
 }
 
-// type MyItems<String, OpenedBuffers> = HashMap<String, OpenedBuffers>;
-
-impl Settings {
-    pub fn new(port: u16) -> Self {
-        Settings {
-            port: port,
-            ..Default::default()
-        }
-    }
-}
-
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             host: "localhost".to_string(),
-            port: 52696,
+            port: 52698,
             wait: false,
             force: false,
             verbose: 0,

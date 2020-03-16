@@ -1,12 +1,14 @@
 use base64;
+use log::*;
 use socket2::{Domain, Socket, Type};
 use std::collections::HashMap;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::fs::{canonicalize, metadata};
 use std::io::prelude::*;
-use std::io::{BufRead, BufReader, BufWriter, SeekFrom, Write};
+use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, SeekFrom, Write};
 use std::net::{IpAddr, SocketAddr};
+
 // use std::path::PathBuf;
 
 // TODO: make a backup copy of files being saved? <08-03-20, yourname> //
@@ -25,7 +27,26 @@ use structopt::StructOpt;
 fn main() -> Result<(), String> {
     let settings = Settings::from_args();
 
-    println!("verbose: {}", settings.verbose);
+    // println!("verbose: {}", settings.verbose);
+    let level;
+    match std::env::var("RUST_LOG") {
+        Err(_) => {
+            match settings.verbose {
+                0 => level = "",
+                1 => level = "info",
+                2 => level = "debug",
+                _ => level = "trace",
+            }
+            std::env::set_var("RUST_LOG", level);
+        }
+        _ => {}
+    }
+    env_logger::init();
+    // info!("verbose: {}", settings.verbose);
+    // debug!("verbose: {}", settings.verbose);
+    // trace!("verbose: {}", settings.verbose);
+    // warn!("verbose: {}", settings.verbose);
+    // error!("verbose: {}", settings.verbose);
 
     let socket = connect_to_editor(&settings).map_err(|e| e.to_string())?;
     let buffers = get_opened_buffers(&settings)?;
@@ -37,18 +58,19 @@ fn main() -> Result<(), String> {
 fn connect_to_editor(settings: &Settings) -> Result<socket2::Socket, std::io::Error> {
     let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
 
-    // let addr_srv = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port).into();
-    // let addr_srv = "127.0.0.1:52698".parse::<SocketAddr>().unwrap().into();
-    let addr_srv = "127.0.0.1".parse::<IpAddr>().unwrap();
+    let addr_srv = settings
+        .host
+        .parse::<IpAddr>()
+        .map_err(|e| Error::new(ErrorKind::AddrNotAvailable, e.to_string()))?;
     let port = settings.port;
     let addr_srv = SocketAddr::new(addr_srv, port).into();
 
-    println!("About to connect to {:?}", addr_srv);
-    socket.connect(&addr_srv).unwrap();
-    println!(
-        "\n\tmy address: {:?}\n\tremote address {:?}\n",
-        socket.local_addr().unwrap(),
-        socket.peer_addr().unwrap()
+    debug!("About to connect to {:?}", addr_srv);
+    socket.connect(&addr_srv)?;
+    trace!(
+        "Socket details: \n\tmy address: {:?}\n\tremote address {:?}",
+        socket.local_addr()?,
+        socket.peer_addr()?
     );
     Ok(socket)
 }
@@ -97,7 +119,7 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
             },
         );
     }
-    print!("buffers: {:?}\n", &buffers);
+    trace!("All opened buffers:\n{:#?}", &buffers);
     Ok(buffers)
 }
 fn open_file_in_remote(
@@ -105,13 +127,13 @@ fn open_file_in_remote(
     buffers: HashMap<String, OpenedBuffer>,
 ) -> Result<HashMap<String, OpenedBuffer>, String> {
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
-    print!("recv buffer: {}\n", bsize);
+    debug!("Socket recv buffer: {}", bsize);
     let bsize = socket.send_buffer_size().map_err(|e| e.to_string())?;
-    print!("send buffer: {}\n", bsize);
-    let mut total = 0usize;
+    debug!("Socket send buffer: {}", bsize);
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, socket);
         for (token, opened_buffer) in buffers.iter() {
+            let mut total = 0usize;
             buf_writer
                 .write_fmt(format_args!(
                     concat!(
@@ -131,32 +153,33 @@ fn open_file_in_remote(
                 let buffer = buf_reader.fill_buf().map_err(|e| e.to_string())?;
                 let length = buffer.len();
                 if length == 0 {
-                    println!(
-                        "read all of file: {}",
+                    debug!(
+                        "read & sent all of input file: {}",
                         opened_buffer.canon_path.to_string_lossy()
                     );
                     break;
                 }
                 total += length;
                 buf_writer.write_all(&buffer).map_err(|e| e.to_string())?;
-                println!("sent {} ({})", length, total);
+                trace!("  sent {} / {}", length, total);
                 buf_reader.consume(length);
             }
             let _n = buf_writer
                 .write_fmt(format_args!("\n.\n"))
                 .map_err(|e| e.to_string());
-            println!(
-                " read {} bytes from file (file size: {})",
+            debug!(
+                "  read {} (out of {} bytes) from input file.",
                 total, opened_buffer.size
             );
+            info!("Opened {:?}", opened_buffer.canon_path);
         }
     }
 
     let mut b = [0u8; 512];
-    println!("waiting...");
+    debug!("Waiting for remote editor to identiy itself...");
     let n = socket.recv(&mut b).map_err(|e| e.to_string())?;
     assert!(n < 512);
-    println!(
+    debug!(
         "Connected to remote app: {}",
         String::from_utf8_lossy(&b[0..n]).trim()
     );
@@ -168,46 +191,39 @@ fn handle_remote(
     mut opened_buffers: HashMap<String, OpenedBuffer>,
 ) -> Result<(), std::io::Error> {
     let mut total = 0;
-    println!("waiting for editor's instructions...");
+    debug!("Waiting for editor's instructions...");
     let mut myline = String::with_capacity(128);
     let bsize = socket.recv_buffer_size()?;
-    println!("fofofo:: {}", bsize);
+    trace!("socket recv size: {}", bsize);
     let mut buffer_reader = BufReader::with_capacity(bsize, &socket);
 
     // Wait for commands from remote app
     while buffer_reader.read_line(&mut myline)? != 0 {
-        println!(
-            "\n\n{{{{{{{{{{}}}}}}}}}}\nmyline >{}<\nmyline.trim >>{}<<",
-            myline,
-            myline.trim()
-        );
+        debug!("Received line from editor (trimmed): >>{}<<", myline.trim());
         match myline.trim() {
             // close the buffer for a file
             "close" => {
-                println!("--> in 'close'");
+                trace!("--> About to close_buffer()");
                 myline.clear();
                 close_buffer(&mut opened_buffers, &mut buffer_reader);
             }
             // save the buffer to a file
             "save" => {
-                println!("--> in 'save'");
+                trace!("--> About to call write_to_disk()");
                 myline.clear();
                 total += write_to_disk(&mut opened_buffers, &mut buffer_reader)?;
             }
             _ => {
                 if myline.trim() == "" {
-                    println!("empty line");
+                    trace!("--> Recvd empty line from editor");
                     continue;
                 } else {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "unrecognized shit",
-                    ));
+                    return Err(Error::new(ErrorKind::Other, "unrecognized shit"));
                 }
             }
         }
     }
-    println!("total bytes: {}", total);
+    trace!("Cumulative total bytes saved: {}", total);
     Ok(())
 }
 
@@ -219,14 +235,13 @@ fn close_buffer(
 
     while let Ok(n) = buffer_reader.read_line(&mut myline) {
         if n == 0 || myline.trim() == "" {
-            println!("breaking out of close");
+            trace!("Finished receiving closing instructions");
             break;
         }
         let command: Vec<&str> = myline.trim().splitn(2, ":").collect::<Vec<&str>>();
-        println!("command:\t{:?}", command);
-        // println!("recv token:\t{:?}", command[1].trim());
+        trace!("  close instruction:\t{:?}", command);
         let (_, closed_buffer) = opened_buffers.remove_entry(command[1].trim()).unwrap();
-        print!("Closed: {:?}\n", closed_buffer.canon_path.as_os_str());
+        info!("Closed: {:?}", closed_buffer.canon_path.as_os_str());
         myline.clear();
     }
 }
@@ -237,22 +252,24 @@ fn write_to_disk(
 ) -> Result<usize, std::io::Error> {
     let mut myline = String::with_capacity(128);
     buffer_reader.read_line(&mut myline)?;
+    trace!("  save instruction:\t{:?}", myline.trim());
     let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0]
         .trim()
         .to_string();
     myline.clear();
-    println!("token: >{}<", token);
+    trace!("  token: >{}<", token);
 
     buffer_reader.read_line(&mut myline)?;
+    trace!("  save instruction:\t{:?}", myline.trim());
     let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
         .trim()
         .parse::<usize>()
         .unwrap();
-    println!("size: {}", data_size);
+    trace!("  save size:\t{:?}", data_size);
     myline.clear();
-    println!(
-        "token: {:?}\ndisplay-name: {:?}",
-        token,
+    trace!("  token: {:?}", token);
+    trace!(
+        "  display-name: {:?}",
         opened_buffers.get(&token).unwrap().display_name
     );
     let mut total = 0usize;
@@ -266,14 +283,12 @@ fn write_to_disk(
             total += length;
             if total >= data_size {
                 let corrected_last_length = length - (total - data_size);
-                println!(
-                    "total read: {}, expected size: {}, diff: {}",
-                    total,
-                    data_size,
-                    total - data_size
-                );
+                trace!("Total recvd: {}", total);
+                trace!("Actual file size: {}", data_size);
+                trace!("  difference: {}", total - data_size);
                 buf_writer.write_all(&buffer[..corrected_last_length])?;
                 buffer_reader.consume(corrected_last_length);
+                debug!(" wrote {} bytes to temp file", corrected_last_length);
                 buf_writer.flush()?;
                 break;
             } else {
@@ -292,10 +307,14 @@ fn write_to_disk(
         rand_temp_file.seek(SeekFrom::Start(0))?;
     }
 
+    debug!(
+        "About to copy the temp file to actual one ({:?})",
+        opened_buffers.get(&token).unwrap().display_name
+    );
     opened_buffers
         .get_mut(&token)
-        .ok_or(std::io::Error::new(
-            std::io::ErrorKind::Other,
+        .ok_or(Error::new(
+            ErrorKind::Other,
             "can't find the open buffer for saving",
         ))
         .and_then(|opened_buffer| {
@@ -315,7 +334,7 @@ fn write_to_disk(
         })
         .and_then(|(written_size, fn_canon)| {
             assert_eq!(data_size as u64, written_size);
-            println!("Saved to {}", fn_canon.to_string_lossy());
+            info!("Saved to {:?}", fn_canon);
             Ok(written_size as usize)
         })
 }
