@@ -1,13 +1,13 @@
 use base64;
 use log::*;
-use socket2::{Domain, Socket, Type};
+use socket2::{Domain, Type};
 use std::collections::HashMap;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::fs::{canonicalize, metadata};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, SeekFrom, Write};
-use std::net::{IpAddr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr};
 use std::path::Path;
 
 // use std::path::PathBuf;
@@ -57,14 +57,19 @@ fn main() -> Result<(), String> {
 }
 
 fn connect_to_editor(settings: &Settings) -> Result<socket2::Socket, std::io::Error> {
-    let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+    let socket = socket2::Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
 
-    let addr_srv = settings
-        .host
-        .parse::<IpAddr>()
-        .map_err(|e| Error::new(ErrorKind::AddrNotAvailable, e.to_string()))?;
+    debug!("Host: {}", settings.host);
+    let addr_srv = if settings.host == "localhost" {
+        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
+    } else {
+        settings
+            .host
+            .parse::<IpAddr>()
+            .map_err(|e| Error::new(ErrorKind::AddrNotAvailable, e.to_string()))?
+    };
     let port = settings.port;
-    let addr_srv = SocketAddr::new(addr_srv, port).into();
+    let addr_srv = std::net::SocketAddr::new(addr_srv, port).into();
 
     debug!("About to connect to {:?}", addr_srv);
     socket.connect(&addr_srv)?;
