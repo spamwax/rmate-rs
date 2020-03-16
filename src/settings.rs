@@ -1,15 +1,45 @@
 use std::ffi::OsString;
 use std::fs::{File, Metadata};
 use std::path::PathBuf;
+use structopt::StructOpt;
 
-#[derive(Debug)]
-pub struct Settings {
+// #[structopt(short, long, env = "RMATE_PORT", default_value = "52698")]
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "rmate", about = "Rust ♥ rmate (TextMate & Sublime Text)")]
+pub(crate) struct Settings {
+    /// Connect to HOST. Use 'auto' to detect the host from SSH.
+    /// Defalts to localhost
+    #[structopt(
+        short = "H",
+        long = "--host",
+        env = "RMATE_HOST",
+        default_value = "localhost"
+    )]
     pub host: String,
+
+    /// Port number to use for connection. Defalts to 52698
+    #[structopt(short, long, env = "RMATE_PORT", default_value = "52698")]
     pub port: u16,
+
+    /// Wait for file to be closed by TextMate/Sublime Text
+    #[structopt(short, long)]
     pub wait: bool,
+
+    /// Open even if file is not writable.
+    /// This flag willl affect all files
+    #[structopt(short, long)]
     pub force: bool,
+
+    /// Verbose logging messages (can be repeated: -vvv)
+    #[structopt(short, long, parse(from_occurrences))]
     pub verbose: u8,
+
+    /// The display name shown in TextMate/Sublime Text
+    #[structopt(short = "m", long = "name", parse(from_os_str), number_of_values = 1)]
     pub names: Vec<OsString>,
+
+    #[structopt(parse(from_os_str), required(true))]
     pub files: Vec<OsString>,
 }
 

@@ -16,12 +16,18 @@ use std::net::{IpAddr, SocketAddr};
 // TODO: use clap for argument parsing <08-03-20, yourname> //
 // TODO: read config files (/etc/rmate.conf)? <08-03-20, yourname> //
 // TODO: warn user about openning read-only files <08-03-20, yourname> //
+// TODO: use 'envy' crate to parse RMATE_* env. variables. <15-03-20, yourname> //
+// TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
 
 mod settings;
 use settings::OpenedBuffer;
 use settings::Settings;
+use structopt::StructOpt;
 
 fn main() -> Result<(), String> {
+    let opt = Settings::from_args();
+    println!("{:?}", opt);
+    return Ok(());
     let args: Vec<OsString> = env::args_os().collect();
     let mut s = Settings {
         host: "localhost".to_string(),
