@@ -9,7 +9,6 @@ edition = "2018"
 socket2 = { version = "0.3", features = ["unix", "reuseport", "pair"] }
 dirs = "2.0"
 tempfile = "3"
-base64 = "0.12"
 rand = "0.7"
 structopt = "0.3"
 log = "0.4"

@@ -1,10 +1,11 @@
-use base64;
 use log::*;
 use socket2::{Domain, Type};
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::fs::{canonicalize, metadata};
+use std::hash::{Hash, Hasher};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, SeekFrom, Write};
 use std::net::{IpAddr, Ipv4Addr};
@@ -103,15 +104,14 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
         }
         let filesize = md.len();
         let rand_temp_file = tempfile::tempfile().map_err(|e| e.to_string())?;
-        let mut encoded_fn = String::with_capacity(512);
-        base64::encode_config_buf(
-            filename_canon.to_string_lossy().as_bytes(),
-            base64::STANDARD,
-            &mut encoded_fn,
-        );
+
+        let mut hasher = DefaultHasher::new();
+        filename_canon.hash(&mut hasher);
+        let hashed_fn = hasher.finish();
+        trace!("hashed_fn (token): {:x}", hashed_fn);
         if let Some(v) = buffers.insert(
             // file_name_string.to_string_lossy().into_owned(),
-            encoded_fn,
+            hashed_fn.to_string(),
             OpenedBuffer {
                 canon_path: filename_canon,
                 display_name: file_name_string.clone(),
