@@ -19,6 +19,7 @@ use std::path::Path;
 // TODO: warn user about openning read-only files <08-03-20, yourname> //
 // TODO: use 'envy' crate to parse RMATE_* env. variables. <15-03-20, yourname> //
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
+// TODO: use fork/spawn to honor --wait option <16-03-20, hamid> //
 
 mod settings;
 use settings::OpenedBuffer;
@@ -135,9 +136,12 @@ fn open_file_in_remote(
     buffers: HashMap<String, OpenedBuffer>,
 ) -> Result<HashMap<String, OpenedBuffer>, String> {
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
-    debug!("Socket recv buffer: {}", bsize);
+    trace!("Socket recv buffer: {}", bsize);
     let bsize = socket.send_buffer_size().map_err(|e| e.to_string())?;
-    debug!("Socket send buffer: {}", bsize);
+    trace!("Socket send buffer: {}", bsize);
+
+    let host_name = gethostname::gethostname();
+    debug!("Hostname: {:?}", host_name);
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, socket);
         for (token, opened_buffer) in buffers.iter() {
@@ -145,10 +149,11 @@ fn open_file_in_remote(
             buf_writer
                 .write_fmt(format_args!(
                     concat!(
-                        "open\ndisplay-name: {}\n",
+                        "open\ndisplay-name: {}:{}\n",
                         "real-path: {}\ndata-on-save: yes\nre-activate: yes\n",
                         "token: {}\ndata: {}\n"
                     ),
+                    host_name.to_string_lossy(),
                     opened_buffer.display_name.to_string_lossy(),
                     opened_buffer.canon_path.to_string_lossy(),
                     token,
@@ -376,3 +381,10 @@ fn write_to_disk(
 fn is_writable<P: AsRef<Path>>(p: P, md: &std::fs::Metadata) -> bool {
     !md.permissions().readonly() && OpenOptions::new().write(true).append(true).open(p).is_ok()
 }
+
+// Code for abandoned crate 'hostname'
+// let host_name = if let Ok(hostname) = hostname::get() {
+//     hostname
+// } else {
+//     std::ffi::OsString::from("rmate_rust_no_HOST_env_variable")
+// };
