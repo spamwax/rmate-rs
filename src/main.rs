@@ -43,6 +43,7 @@ fn main() -> Result<(), String> {
     }
     env_logger::init();
 
+    trace!("rmate settings: {:#?}", settings);
     let socket = connect_to_editor(&settings).map_err(|e| e.to_string())?;
     let buffers = get_opened_buffers(&settings)?;
     let buffers = open_file_in_remote(&socket, buffers)?;
@@ -302,11 +303,16 @@ fn write_to_disk(
                 trace!("  difference: {}", total - data_size);
                 buf_writer.write_all(&buffer[..corrected_last_length])?;
                 buffer_reader.consume(corrected_last_length);
-                debug!(" wrote {} bytes to temp file", corrected_last_length);
+                debug!(
+                    " -- wrote {}-byte chunk to temp file",
+                    corrected_last_length
+                );
+                debug!("  wrote total of {} bytes to temp file", data_size);
                 buf_writer.flush()?;
                 break;
             } else {
                 buf_writer.write_all(&buffer)?;
+                debug!(" -- wrote {}-byte chunk to temp file", length);
                 buffer_reader.consume(length);
             }
         }

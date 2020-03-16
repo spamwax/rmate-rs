@@ -7,9 +7,7 @@ edition = "2018"
 
 [dependencies]
 socket2 = { version = "0.3", features = ["unix", "reuseport", "pair"] }
-dirs = "2.0"
 tempfile = "3"
-rand = "0.7"
 structopt = "0.3"
 log = "0.4"
 env_logger = "0.7.1"
