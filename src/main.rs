@@ -13,13 +13,10 @@ use std::path::Path;
 // use std::path::PathBuf;
 
 // TODO: make a backup copy of files being saved? <08-03-20, yourname> //
-// TODO: create struct to store opsions for each file opened <08-03-20, yourname> //
-// TODO: use clap for argument parsing <08-03-20, yourname> //
 // TODO: read config files (/etc/rmate.conf)? <08-03-20, yourname> //
-// TODO: warn user about openning read-only files <08-03-20, yourname> //
-// TODO: use 'envy' crate to parse RMATE_* env. variables. <15-03-20, yourname> //
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
 // TODO: use fork/spawn to honor --wait option <16-03-20, hamid> //
+// TODO: Improve error handling, don't crash if an error happens while other buffers are open. <16-03-20, hamid> //
 
 mod settings;
 use settings::OpenedBuffer;
@@ -34,7 +31,7 @@ fn main() -> Result<(), String> {
     match std::env::var("RUST_LOG") {
         Err(_) => {
             match settings.verbose {
-                0 => level = "",
+                0 => level = "warn",
                 1 => level = "info",
                 2 => level = "debug",
                 _ => level = "trace",
@@ -44,11 +41,6 @@ fn main() -> Result<(), String> {
         _ => {}
     }
     env_logger::init();
-    // info!("verbose: {}", settings.verbose);
-    // debug!("verbose: {}", settings.verbose);
-    // trace!("verbose: {}", settings.verbose);
-    // warn!("verbose: {}", settings.verbose);
-    // error!("verbose: {}", settings.verbose);
 
     let socket = connect_to_editor(&settings).map_err(|e| e.to_string())?;
     let buffers = get_opened_buffers(&settings)?;
@@ -117,8 +109,9 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
             base64::STANDARD,
             &mut encoded_fn,
         );
-        buffers.insert(
-            file_name_string.to_string_lossy().into_owned(),
+        if let Some(v) = buffers.insert(
+            // file_name_string.to_string_lossy().into_owned(),
+            encoded_fn,
             OpenedBuffer {
                 canon_path: filename_canon,
                 display_name: file_name_string.clone(),
@@ -126,7 +119,12 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
                 temp_file: rand_temp_file,
                 size: filesize,
             },
-        );
+        ) {
+            warn!(
+                "You are trying to open same files multiple time: {}",
+                v.canon_path.to_string_lossy().as_ref()
+            );
+        };
     }
     trace!("All opened buffers:\n{:#?}", &buffers);
     Ok(buffers)
