@@ -6,9 +6,9 @@ use structopt::StructOpt;
 // #[structopt(short, long, env = "RMATE_PORT", default_value = "52698")]
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "rmate", about = "Rust ♥ rmate (TextMate & Sublime Text)")]
+#[structopt(name = "rmate", about = "rmate ♥ Rust (TextMate & Sublime Text)")]
 pub(crate) struct Settings {
-    /// Connect to HOST. Use 'auto' to detect the host from SSH.
+    /// Connect to HOST. Use 'auto' to detect the host from SSH
     /// Defalts to localhost
     #[structopt(
         short = "H",

@@ -1,8 +1,6 @@
 use base64;
 use socket2::{Domain, Socket, Type};
 use std::collections::HashMap;
-use std::env;
-use std::ffi::OsString;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::fs::{canonicalize, metadata};
@@ -25,44 +23,43 @@ use settings::Settings;
 use structopt::StructOpt;
 
 fn main() -> Result<(), String> {
-    let opt = Settings::from_args();
-    println!("{:?}", opt);
-    return Ok(());
-    let args: Vec<OsString> = env::args_os().collect();
-    let mut s = Settings {
-        host: "localhost".to_string(),
-        port: env::var("RMATE_PORT")
-            .unwrap_or("52698".to_string())
-            .parse::<u16>()
-            .unwrap(),
-        wait: true,
-        force: false,
-        verbose: 1,
-        names: vec![],
-        files: vec![],
-    };
+    let settings = Settings::from_args();
 
-    if args.len() < 2 {
-        return Err("no input file name".to_string());
-    }
-    let fname = args[1].clone();
-    s.files.push(fname);
-    let fname = args[2].clone();
-    s.files.push(fname);
-    let (socket, buffers) = open_file_in_remote(&s)?;
+    println!("verbose: {}", settings.verbose);
+
+    let socket = connect_to_editor(&settings).map_err(|e| e.to_string())?;
+    let buffers = get_opened_buffers(&settings)?;
+    let buffers = open_file_in_remote(&socket, buffers)?;
     handle_remote(socket, buffers).map_err(|e| e.to_string())?;
     Ok(())
 }
 
-fn open_file_in_remote(
-    s: &Settings,
-) -> Result<(socket2::Socket, HashMap<String, OpenedBuffer>), String> {
+fn connect_to_editor(settings: &Settings) -> Result<socket2::Socket, std::io::Error> {
+    let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+
+    // let addr_srv = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port).into();
+    // let addr_srv = "127.0.0.1:52698".parse::<SocketAddr>().unwrap().into();
+    let addr_srv = "127.0.0.1".parse::<IpAddr>().unwrap();
+    let port = settings.port;
+    let addr_srv = SocketAddr::new(addr_srv, port).into();
+
+    println!("About to connect to {:?}", addr_srv);
+    socket.connect(&addr_srv).unwrap();
+    println!(
+        "\n\tmy address: {:?}\n\tremote address {:?}\n",
+        socket.local_addr().unwrap(),
+        socket.peer_addr().unwrap()
+    );
+    Ok(socket)
+}
+
+fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffer>, String> {
     let mut buffers = HashMap::new();
-    for (idx, file) in s.files.iter().enumerate() {
+    for (idx, file) in settings.files.iter().enumerate() {
         let filename_canon = canonicalize(file).map_err(|e| e.to_string())?;
         let file_name_string;
-        if s.names.len() > idx {
-            file_name_string = s.names[idx].clone();
+        if settings.names.len() > idx {
+            file_name_string = settings.names[idx].clone();
         } else {
             file_name_string = filename_canon
                 .file_name()
@@ -74,6 +71,12 @@ fn open_file_in_remote(
             return Err("openning directory not supported".to_string());
         }
         let canwrite = !md.permissions().readonly();
+        if !(canwrite || settings.force) {
+            return Err(format!(
+                "{:?} is readonly, use -f/--force to open it anyway",
+                file_name_string
+            ));
+        }
         let filesize = md.len();
         let rand_temp_file = tempfile::tempfile().map_err(|e| e.to_string())?;
         let mut encoded_fn = String::with_capacity(512);
@@ -95,30 +98,19 @@ fn open_file_in_remote(
         );
     }
     print!("buffers: {:?}\n", &buffers);
-
-    let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
-
-    // let addr_srv = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), port).into();
-    // let addr_srv = "127.0.0.1:52698".parse::<SocketAddr>().unwrap().into();
-    let addr_srv = "127.0.0.1".parse::<IpAddr>().unwrap();
-    let port = s.port;
-    let addr_srv = SocketAddr::new(addr_srv, port).into();
-
-    println!("About to connect to {:?}", addr_srv);
-    socket.connect(&addr_srv).unwrap();
-    println!(
-        "\n\tmy address: {:?}\n\tremote address {:?}\n",
-        socket.local_addr().unwrap(),
-        socket.peer_addr().unwrap()
-    );
-
+    Ok(buffers)
+}
+fn open_file_in_remote(
+    socket: &socket2::Socket,
+    buffers: HashMap<String, OpenedBuffer>,
+) -> Result<HashMap<String, OpenedBuffer>, String> {
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
     print!("recv buffer: {}\n", bsize);
     let bsize = socket.send_buffer_size().map_err(|e| e.to_string())?;
     print!("send buffer: {}\n", bsize);
     let mut total = 0usize;
     {
-        let mut buf_writer = BufWriter::with_capacity(bsize, &socket);
+        let mut buf_writer = BufWriter::with_capacity(bsize, socket);
         for (token, opened_buffer) in buffers.iter() {
             buf_writer
                 .write_fmt(format_args!(
@@ -168,7 +160,7 @@ fn open_file_in_remote(
         "Connected to remote app: {}",
         String::from_utf8_lossy(&b[0..n]).trim()
     );
-    Ok((socket, buffers))
+    Ok(buffers)
 }
 
 fn handle_remote(
