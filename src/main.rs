@@ -8,6 +8,7 @@ use std::fs::{canonicalize, metadata};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, SeekFrom, Write};
 use std::net::{IpAddr, SocketAddr};
+use std::path::Path;
 
 // use std::path::PathBuf;
 
@@ -92,11 +93,14 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
         if md.is_dir() {
             return Err("openning directory not supported".to_string());
         }
-        let canwrite = !md.permissions().readonly();
+        let canwrite = is_writable(&filename_canon, &md);
+        if !canwrite {
+            warn!("{:?} is readonly!", filename_canon);
+        }
         if !(canwrite || settings.force) {
             return Err(format!(
-                "{:?} is readonly, use -f/--force to open it anyway",
-                file_name_string
+                "File {} is read-only, use -f/--force to open it anyway",
+                file_name_string.to_string_lossy()
             ));
         }
         let filesize = md.len();
@@ -113,7 +117,6 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
                 canon_path: filename_canon,
                 display_name: file_name_string.clone(),
                 canwrite: canwrite,
-                metadata: md,
                 temp_file: rand_temp_file,
                 size: filesize,
             },
@@ -211,7 +214,10 @@ fn handle_remote(
             "save" => {
                 trace!("--> About to call write_to_disk()");
                 myline.clear();
-                total += write_to_disk(&mut opened_buffers, &mut buffer_reader)?;
+                match write_to_disk(&mut opened_buffers, &mut buffer_reader) {
+                    Ok(n) => total += n,
+                    Err(e) => error!("Couldn't save: {}", e.to_string()),
+                }
             }
             _ => {
                 if myline.trim() == "" {
@@ -307,6 +313,11 @@ fn write_to_disk(
         rand_temp_file.seek(SeekFrom::Start(0))?;
     }
 
+    if !opened_buffers.get(&token).unwrap().canwrite {
+        debug!("File is read-only, not touching it!");
+        return Ok(0);
+    }
+
     debug!(
         "About to copy the temp file to actual one ({:?})",
         opened_buffers.get(&token).unwrap().display_name
@@ -322,14 +333,26 @@ fn write_to_disk(
             let fp = OpenOptions::new()
                 .write(true)
                 .truncate(true)
-                .open(fn_canon)?;
+                .open(fn_canon)
+                .map_err(|e| {
+                    Error::new(
+                        ErrorKind::Other,
+                        format!("{}: {:?}", fn_canon.to_string_lossy(), e.to_string()),
+                    )
+                })?;
             let mut temp_file = File::try_clone(&opened_buffer.temp_file)?;
             temp_file.seek(SeekFrom::Start(0))?;
             let temp_reader_sized = temp_file.take(data_size as u64);
 
             let mut buffer_writer = BufWriter::new(fp);
             let mut buffer_reader = BufReader::new(temp_reader_sized);
-            let written_size = std::io::copy(&mut buffer_reader, &mut buffer_writer)?;
+            let written_size =
+                std::io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
+                    Error::new(
+                        ErrorKind::Other,
+                        format!("{}: {:?}", fn_canon.to_string_lossy(), e),
+                    )
+                })?;
             Ok((written_size, fn_canon))
         })
         .and_then(|(written_size, fn_canon)| {
@@ -337,4 +360,14 @@ fn write_to_disk(
             info!("Saved to {:?}", fn_canon);
             Ok(written_size as usize)
         })
+}
+
+// Check if file is writable by user
+// metadata.permissions.readonly() checks all bits of file,
+// regradless of which user is trying to write to it.
+// So it seems actually trying to open the file in write mode is
+// the only reliable way of checking the write access of current
+// user in a cross platform manner
+fn is_writable<P: AsRef<Path>>(p: P, md: &std::fs::Metadata) -> bool {
+    !md.permissions().readonly() && OpenOptions::new().write(true).append(true).open(p).is_ok()
 }

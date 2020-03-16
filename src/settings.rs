@@ -1,5 +1,5 @@
 use std::ffi::OsString;
-use std::fs::{File, Metadata};
+use std::fs::File;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -48,7 +48,6 @@ pub(crate) struct OpenedBuffer {
     pub(crate) canon_path: PathBuf,
     pub(crate) display_name: OsString,
     pub(crate) canwrite: bool,
-    pub(crate) metadata: Metadata,
     pub(crate) temp_file: File,
     pub(crate) size: u64,
 }
