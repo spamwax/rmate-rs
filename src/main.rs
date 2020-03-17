@@ -89,6 +89,15 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
                 .ok_or("no valid file name found in input argument".to_string())?
                 .to_os_string();
         }
+        let mut line = String::with_capacity(128);
+        if idx < settings.lines.len() {
+            line = settings.lines[idx].clone();
+        }
+        let filetype: Option<String> = if idx < settings.filetypes.len() {
+            Some(settings.filetypes[idx].clone())
+        } else {
+            None
+        };
         let md = metadata(&filename_canon).map_err(|e| e.to_string())?;
         if md.is_dir() {
             return Err("openning directory not supported".to_string());
@@ -116,6 +125,8 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
             OpenedBuffer {
                 canon_path: filename_canon,
                 display_name: file_name_string.clone(),
+                line: line,
+                filetype: filetype,
                 canwrite: canwrite,
                 temp_file: rand_temp_file,
                 size: filesize,
@@ -144,21 +155,34 @@ fn open_file_in_remote(
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, socket);
         for (token, opened_buffer) in buffers.iter() {
+            // For each buffer get the header values:
+            // - display-name
+            // - real-path
+            // - selection/line
+            // - file-type (optional)
             let mut total = 0usize;
-            buf_writer
-                .write_fmt(format_args!(
-                    concat!(
-                        "open\ndisplay-name: {}:{}\n",
-                        "real-path: {}\ndata-on-save: yes\nre-activate: yes\n",
-                        "token: {}\ndata: {}\n"
-                    ),
-                    host_name.to_string_lossy(),
-                    opened_buffer.display_name.to_string_lossy(),
-                    opened_buffer.canon_path.to_string_lossy(),
-                    token,
-                    opened_buffer.size,
-                ))
-                .map_err(|e| e.to_string())?;
+            let header = format!(
+                concat!(
+                    "open\ndisplay-name: {}:{}\n",
+                    "real-path: {}\n",
+                    "selection: {}\n",
+                    "data-on-save: yes\nre-activate: yes\n",
+                    "token: {}\n",
+                ),
+                host_name.to_string_lossy(),
+                opened_buffer.display_name.to_string_lossy(),
+                opened_buffer.canon_path.to_string_lossy(),
+                opened_buffer.line,
+                token
+            );
+            trace!("header: {}", header);
+            write!(&mut buf_writer, "{}", header).map_err(|e| e.to_string())?;
+            if let Some(filetype) = &opened_buffer.filetype {
+                write!(&mut buf_writer, "file-type: {}\n", filetype).map_err(|e| e.to_string())?;
+                debug!("file-type: {}", filetype);
+            }
+            write!(&mut buf_writer, "data: {}\n", opened_buffer.size).map_err(|e| e.to_string())?;
+
             let fp = File::open(&opened_buffer.canon_path).map_err(|e| e.to_string())?;
             let mut buf_reader = BufReader::with_capacity(bsize, fp);
             loop {

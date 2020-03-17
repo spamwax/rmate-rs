@@ -12,6 +12,7 @@ pub(crate) struct Settings {
         short = "H",
         long = "--host",
         env = "RMATE_HOST",
+        name = "HOST",
         default_value = "localhost"
     )]
     pub host: String,
@@ -37,6 +38,14 @@ pub(crate) struct Settings {
     #[structopt(short = "m", long = "name", parse(from_os_str), number_of_values = 1)]
     pub names: Vec<OsString>,
 
+    /// Place caret on line [NUMBER] after loading file
+    #[structopt(short, long, name = "LINE", number_of_values = 1)]
+    pub lines: Vec<String>,
+
+    /// Treat file as having [TYPE]
+    #[structopt(short = "t", long = "type", name = "TYPE", number_of_values = 1)]
+    pub filetypes: Vec<String>,
+
     #[structopt(parse(from_os_str), required(true))]
     pub files: Vec<OsString>,
 }
@@ -47,6 +56,8 @@ pub(crate) struct Settings {
 pub(crate) struct OpenedBuffer {
     pub(crate) canon_path: PathBuf,
     pub(crate) display_name: OsString,
+    pub(crate) line: String,
+    pub(crate) filetype: Option<String>,
     pub(crate) canwrite: bool,
     pub(crate) temp_file: File,
     pub(crate) size: u64,
@@ -60,6 +71,8 @@ impl Default for Settings {
             wait: false,
             force: false,
             verbose: 0,
+            lines: vec![],
+            filetypes: vec![],
             names: vec![],
             files: vec![],
         }
