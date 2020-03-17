@@ -234,8 +234,19 @@ fn handle_remote(
     let mut buffer_reader = BufReader::with_capacity(bsize, &socket);
 
     // Wait for commands from remote app
+    // let mut line = Vec::<u8>::with_capacity(64);
     while buffer_reader.read_line(&mut myline)? != 0 {
-        debug!("Received line from editor (trimmed): >>{}<<", myline.trim());
+        // loop {
+        // let n = buffer_reader.read_until(b'\n', &mut line)?;
+        // if n == 0 {
+        //     break;
+        // }
+        // let myline = String::from_utf8_lossy(&line).into_owned();
+        // line.clear();
+        debug!(
+            "=== Received line from editor (trimmed): >>{}<<",
+            myline.trim()
+        );
         match myline.trim() {
             // close the buffer for a file
             "close" => {
@@ -254,9 +265,10 @@ fn handle_remote(
             }
             _ => {
                 if myline.trim() == "" {
-                    trace!("--> Recvd empty line from editor");
+                    trace!("<-- Recvd empty line from editor");
                     continue;
                 } else {
+                    warn!("***===*** Unrecognized shit: {:?}", myline.trim());
                     return Err(Error::new(ErrorKind::Other, "unrecognized shit"));
                 }
             }
@@ -292,56 +304,68 @@ fn write_to_disk(
     let mut myline = String::with_capacity(128);
     buffer_reader.read_line(&mut myline)?;
     trace!("  save instruction:\t{:?}", myline.trim());
+
     let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0]
         .trim()
         .to_string();
-    myline.clear();
     trace!("  token: >{}<", token);
-
-    buffer_reader.read_line(&mut myline)?;
-    trace!("  save instruction:\t{:?}", myline.trim());
-    let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
-        .trim()
-        .parse::<usize>()
-        .unwrap();
-    trace!("  save size:\t{:?}", data_size);
     myline.clear();
-    trace!("  token: {:?}", token);
-    trace!(
-        "  display-name: {:?}",
-        opened_buffers.get(&token).unwrap().display_name
-    );
-    let mut total = 0usize;
+
+    let mut total_written = 0usize;
     {
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
         rand_temp_file.seek(SeekFrom::Start(0))?;
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
         loop {
-            let buffer = buffer_reader.fill_buf()?;
-            let length = buffer.len();
-            total += length;
-            if total >= data_size {
-                let corrected_last_length = length - (total - data_size);
-                trace!("Total recvd: {}", total);
-                trace!("Actual file size: {}", data_size);
-                trace!("  difference: {}", total - data_size);
-                buf_writer.write_all(&buffer[..corrected_last_length])?;
-                buffer_reader.consume(corrected_last_length);
-                trace!(
-                    " -- wrote {}-byte chunk to temp file",
-                    corrected_last_length
-                );
-                debug!("  wrote total of {} bytes to temp file", data_size);
-                buf_writer.flush()?;
+            buffer_reader.read_line(&mut myline)?;
+            if myline.trim().is_empty() {
+                trace!("<- breaking out of write_to_disk");
                 break;
-            } else {
-                buf_writer.write_all(&buffer)?;
-                trace!(" -- wrote {}-byte chunk to temp file", length);
-                buffer_reader.consume(length);
             }
+            trace!("  -->  save instruction:\t{:?}", myline.trim());
+            assert!(myline.trim().contains("data: "));
+            let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
+                .trim()
+                .parse::<usize>()
+                .unwrap();
+            trace!("  save size:\t{:?}", data_size);
+            myline.clear();
+
+            let mut total = 0usize;
+            loop {
+                let buffer = buffer_reader.fill_buf()?;
+                if buffer.is_empty() {
+                    warn!("HMMMMMMMMM..........MMMMMMMMMMMM");
+                    break;
+                }
+                let length = buffer.len();
+                total += length;
+                if total >= data_size {
+                    trace!("Total recvd: {}", total);
+                    trace!("length: {}", length);
+                    let corrected_last_length = length - (total - data_size);
+                    trace!("  data_size: {}", data_size);
+                    trace!("  corrected_last_length: {}", corrected_last_length);
+                    buf_writer.write_all(&buffer[..corrected_last_length])?;
+                    trace!("extra bytes read {:?}", &buffer[corrected_last_length..]);
+                    buffer_reader.consume(corrected_last_length);
+                    trace!(" -- wrote last chunk: {}", corrected_last_length);
+                    buf_writer.flush()?;
+                    total_written += corrected_last_length;
+                    break;
+                } else {
+                    buf_writer.write_all(&buffer)?;
+                    total_written += length;
+                    total += length;
+                    trace!(" -- wrote {}/{}-byte chunk to temp file", total, data_size);
+                    buffer_reader.consume(length);
+                }
+            }
+            trace!(" total_written: {}", total_written);
         }
     }
 
+    debug!("Bytes written to temp file: {}", total_written);
     // Open the file we are supposed to actuallly save to, and copy
     // content of temp. file to it. ensure we only write number of bytes that
     // Sublime Text has sent us.
@@ -357,7 +381,7 @@ fn write_to_disk(
     }
 
     debug!(
-        "About to copy the temp file to actual one ({:?})",
+        "About to copy the temp file over the main file ({:?})",
         opened_buffers.get(&token).unwrap().display_name
     );
     opened_buffers
@@ -380,7 +404,7 @@ fn write_to_disk(
                 })?;
             let mut temp_file = File::try_clone(&opened_buffer.temp_file)?;
             temp_file.seek(SeekFrom::Start(0))?;
-            let temp_reader_sized = temp_file.take(data_size as u64);
+            let temp_reader_sized = temp_file.take(total_written as u64);
 
             let mut buffer_writer = BufWriter::new(fp);
             let mut buffer_reader = BufReader::new(temp_reader_sized);
@@ -394,7 +418,7 @@ fn write_to_disk(
             Ok((written_size, fn_canon))
         })
         .and_then(|(written_size, fn_canon)| {
-            assert_eq!(data_size as u64, written_size);
+            assert_eq!(total_written as u64, written_size);
             info!("Saved to {:?}", fn_canon);
             Ok(written_size as usize)
         })
