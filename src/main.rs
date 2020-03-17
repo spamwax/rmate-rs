@@ -303,7 +303,7 @@ fn write_to_disk(
                 trace!("  difference: {}", total - data_size);
                 buf_writer.write_all(&buffer[..corrected_last_length])?;
                 buffer_reader.consume(corrected_last_length);
-                debug!(
+                trace!(
                     " -- wrote {}-byte chunk to temp file",
                     corrected_last_length
                 );
@@ -312,7 +312,7 @@ fn write_to_disk(
                 break;
             } else {
                 buf_writer.write_all(&buffer)?;
-                debug!(" -- wrote {}-byte chunk to temp file", length);
+                trace!(" -- wrote {}-byte chunk to temp file", length);
                 buffer_reader.consume(length);
             }
         }
@@ -328,7 +328,7 @@ fn write_to_disk(
     }
 
     if !opened_buffers.get(&token).unwrap().canwrite {
-        debug!("File is read-only, not touching it!");
+        info!("File is read-only, not touching it!");
         return Ok(0);
     }
 
