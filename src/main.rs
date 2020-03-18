@@ -1,3 +1,4 @@
+use fork::{fork, Fork};
 use log::*;
 use socket2::{Domain, Type};
 use std::collections::hash_map::DefaultHasher;
@@ -16,8 +17,8 @@ use std::path::Path;
 // TODO: make a backup copy of files being saved? <08-03-20, yourname> //
 // TODO: read config files (/etc/rmate.conf)? <08-03-20, yourname> //
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
-// TODO: use fork/spawn to honor --wait option <16-03-20, hamid> //
 // TODO: Improve error handling, don't crash if an error happens while other buffers are open. <16-03-20, hamid> //
+// TODO: Can we correct the fork() error number to a proper io::Error? <18-03-20, hamid> //
 
 mod settings;
 use settings::OpenedBuffer;
@@ -27,7 +28,6 @@ use structopt::StructOpt;
 fn main() -> Result<(), String> {
     let settings = Settings::from_args();
 
-    // println!("verbose: {}", settings.verbose);
     let level;
     match std::env::var("RUST_LOG") {
         Err(_) => {
@@ -44,11 +44,42 @@ fn main() -> Result<(), String> {
     env_logger::init();
 
     trace!("rmate settings: {:#?}", settings);
+
+    // Check & connect to socket
     let socket = connect_to_editor(&settings).map_err(|e| e.to_string())?;
+    // Populate internal data about files in OpenedBuffer structure
     let buffers = get_opened_buffers(&settings)?;
+    // Send the files to remote editor
     let buffers = open_file_in_remote(&socket, buffers)?;
+
+    // If needed, fork so we yield the control back to terminal
+    if !settings.wait && run_fork()? {
+        debug!("Successfully forked!");
+        return Ok(());
+    }
+
+    // Wait for save/close instructions from remote and handle them
     handle_remote(socket, buffers).map_err(|e| e.to_string())?;
+
     Ok(())
+}
+
+// On successfull fork(), parent return true and child returns false.
+fn run_fork() -> Result<bool, String> {
+    match fork() {
+        Ok(Fork::Parent(child)) => {
+            trace!("Parent process created a child: {}", child);
+            return Ok(true);
+        }
+        Ok(Fork::Child) => {
+            trace!("Child says: I AM BORN!");
+            return Ok(false);
+        }
+        Err(e) => {
+            error!("{}", e.to_string());
+            return Err(format!("OS Error no. {}", e));
+        }
+    }
 }
 
 fn connect_to_editor(settings: &Settings) -> Result<socket2::Socket, std::io::Error> {
