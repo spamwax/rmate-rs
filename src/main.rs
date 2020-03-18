@@ -109,8 +109,11 @@ fn connect_to_editor(settings: &Settings) -> Result<socket2::Socket, std::io::Er
 
 fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffer>, String> {
     let mut buffers = HashMap::new();
+
+    // Iterate over all files and create bookkeeping info
     for (idx, file) in settings.files.iter().enumerate() {
         let filename_canon = canonicalize(file).map_err(|e| e.to_string())?;
+
         let file_name_string;
         if settings.names.len() > idx {
             file_name_string = settings.names[idx].clone();
@@ -120,6 +123,7 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
                 .ok_or("no valid file name found in input argument".to_string())?
                 .to_os_string();
         }
+
         let mut line = String::with_capacity(128);
         if idx < settings.lines.len() {
             line = settings.lines[idx].clone();
@@ -129,12 +133,12 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
         } else {
             None
         };
+
         let md = metadata(&filename_canon).map_err(|e| e.to_string())?;
         if md.is_dir() {
             return Err("openning directory not supported".to_string());
         }
         let canwrite = is_writable(&filename_canon, &md);
-
         // Show a warning even though user has used the --force flag.
         if !canwrite && settings.force {
             warn!("{:?} is readonly!", filename_canon);
@@ -145,6 +149,7 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
                 file_name_string.to_string_lossy()
             ));
         }
+
         let filesize = md.len();
         let rand_temp_file = tempfile::tempfile().map_err(|e| e.to_string())?;
 
@@ -153,7 +158,6 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
         let hashed_fn = hasher.finish();
         trace!("hashed_fn (token): {:x}", hashed_fn);
         if let Some(v) = buffers.insert(
-            // file_name_string.to_string_lossy().into_owned(),
             hashed_fn.to_string(),
             OpenedBuffer {
                 canon_path: filename_canon,
@@ -174,6 +178,7 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
     trace!("All opened buffers:\n{:#?}", &buffers);
     Ok(buffers)
 }
+
 fn open_file_in_remote(
     socket: &socket2::Socket,
     buffers: HashMap<String, OpenedBuffer>,
@@ -210,12 +215,14 @@ fn open_file_in_remote(
             );
             trace!("header: {}", header);
             write!(&mut buf_writer, "{}", header).map_err(|e| e.to_string())?;
+
             if let Some(filetype) = &opened_buffer.filetype {
                 write!(&mut buf_writer, "file-type: {}\n", filetype).map_err(|e| e.to_string())?;
                 debug!("file-type: {}", filetype);
             }
             write!(&mut buf_writer, "data: {}\n", opened_buffer.size).map_err(|e| e.to_string())?;
 
+            // Read file from disk and send it over the socket
             let fp = File::open(&opened_buffer.canon_path).map_err(|e| e.to_string())?;
             let mut buf_reader = BufReader::with_capacity(bsize, fp);
             loop {
@@ -233,6 +240,7 @@ fn open_file_in_remote(
                 trace!("  sent {} / {}", length, total);
                 buf_reader.consume(length);
             }
+            // Signal we are done sending this file
             let _n = buf_writer
                 .write_fmt(format_args!("\n.\n"))
                 .map_err(|e| e.to_string());
@@ -261,11 +269,12 @@ fn handle_remote(
 ) -> Result<(), std::io::Error> {
     let mut total = 0;
     debug!("Waiting for editor's instructions...");
+
     let mut myline = String::with_capacity(128);
     let bsize = socket.recv_buffer_size()? * 2;
     trace!("socket recv size: {}", bsize);
-    let mut buffer_reader = BufReader::with_capacity(bsize, &socket);
 
+    let mut buffer_reader = BufReader::with_capacity(bsize, &socket);
     // Wait for commands from remote app
     // let mut line = Vec::<u8>::with_capacity(64);
     while buffer_reader.read_line(&mut myline)? != 0 {
@@ -328,9 +337,9 @@ fn write_to_disk(
     buffer_reader: &mut BufReader<&socket2::Socket>,
 ) -> Result<usize, std::io::Error> {
     let mut myline = String::with_capacity(128);
+
     buffer_reader.read_line(&mut myline)?;
     trace!("  save instruction:\t{:?}", myline.trim());
-
     let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0]
         .trim()
         .to_string();
@@ -339,8 +348,10 @@ fn write_to_disk(
 
     let mut total_written = 0usize;
     {
+        // Get the info about which file we are receiving data for.
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
         rand_temp_file.seek(SeekFrom::Start(0))?;
+
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
         loop {
             buffer_reader.read_line(&mut myline)?;
@@ -357,6 +368,7 @@ fn write_to_disk(
             trace!("  save size:\t{:?}", data_size);
             myline.clear();
 
+            // Remote editor may send multiple "data: SIZE" sections under one "save" command
             let mut total = 0usize;
             loop {
                 let buffer = buffer_reader.fill_buf()?;
@@ -370,7 +382,6 @@ fn write_to_disk(
                     trace!("length: {}", length);
                     let corrected_last_length = data_size - total;
                     trace!("  data_size: {}", data_size);
-                    trace!("  corrected_last_length: {}", corrected_last_length);
                     trace!("  left over size: {}", length - corrected_last_length);
                     buf_writer.write_all(&buffer[..corrected_last_length])?;
                     trace!(
@@ -395,7 +406,6 @@ fn write_to_disk(
                     buffer_reader.consume(length);
                 }
             }
-            trace!(" total_written: {}", total_written);
         }
     }
 
