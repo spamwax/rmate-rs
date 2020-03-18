@@ -149,7 +149,7 @@ fn open_file_in_remote(
 ) -> Result<HashMap<String, OpenedBuffer>, String> {
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
     trace!("Socket recv buffer: {}", bsize);
-    let bsize = socket.send_buffer_size().map_err(|e| e.to_string())?;
+    let bsize = socket.send_buffer_size().map_err(|e| e.to_string())? * 2;
     trace!("Socket send buffer: {}", bsize);
 
     let host_name = gethostname::gethostname();
@@ -231,7 +231,7 @@ fn handle_remote(
     let mut total = 0;
     debug!("Waiting for editor's instructions...");
     let mut myline = String::with_capacity(128);
-    let bsize = socket.recv_buffer_size()?;
+    let bsize = socket.recv_buffer_size()? * 2;
     trace!("socket recv size: {}", bsize);
     let mut buffer_reader = BufReader::with_capacity(bsize, &socket);
 
