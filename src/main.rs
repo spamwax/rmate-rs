@@ -340,6 +340,7 @@ fn write_to_disk(
                     let corrected_last_length = data_size - total;
                     trace!("  data_size: {}", data_size);
                     trace!("  corrected_last_length: {}", corrected_last_length);
+                    trace!("  left over size: {}", length - corrected_last_length);
                     buf_writer.write_all(&buffer[..corrected_last_length])?;
                     trace!(
                         "extra bytes read {}",
@@ -354,7 +355,12 @@ fn write_to_disk(
                     buf_writer.write_all(&buffer)?;
                     total_written += length;
                     total += length;
-                    trace!(" -- wrote {}/{}-byte chunk to temp file", length, total);
+                    trace!(
+                        " -- written so far: {}/{}-byte (chunk: {}) to temp file",
+                        total,
+                        data_size,
+                        length
+                    );
                     buffer_reader.consume(length);
                 }
             }
