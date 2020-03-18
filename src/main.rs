@@ -103,7 +103,9 @@ fn get_opened_buffers(settings: &Settings) -> Result<HashMap<String, OpenedBuffe
             return Err("openning directory not supported".to_string());
         }
         let canwrite = is_writable(&filename_canon, &md);
-        if !canwrite {
+
+        // Show a warning even though user has used the --force flag.
+        if !canwrite && settings.force {
             warn!("{:?} is readonly!", filename_canon);
         }
         if !(canwrite || settings.force) {
@@ -236,13 +238,6 @@ fn handle_remote(
     // Wait for commands from remote app
     // let mut line = Vec::<u8>::with_capacity(64);
     while buffer_reader.read_line(&mut myline)? != 0 {
-        // loop {
-        // let n = buffer_reader.read_until(b'\n', &mut line)?;
-        // if n == 0 {
-        //     break;
-        // }
-        // let myline = String::from_utf8_lossy(&line).into_owned();
-        // line.clear();
         debug!(
             "=== Received line from editor (trimmed): >>{}<<",
             myline.trim()
@@ -339,15 +334,17 @@ fn write_to_disk(
                     break;
                 }
                 let length = buffer.len();
-                total += length;
-                if total >= data_size {
-                    trace!("Total recvd: {}", total);
+                if total + length >= data_size {
+                    trace!("Total recvd: {}", total + length);
                     trace!("length: {}", length);
-                    let corrected_last_length = length - (total - data_size);
+                    let corrected_last_length = data_size - total;
                     trace!("  data_size: {}", data_size);
                     trace!("  corrected_last_length: {}", corrected_last_length);
                     buf_writer.write_all(&buffer[..corrected_last_length])?;
-                    trace!("extra bytes read {:?}", &buffer[corrected_last_length..]);
+                    trace!(
+                        "extra bytes read {}",
+                        String::from_utf8_lossy(&buffer[corrected_last_length..])
+                    );
                     buffer_reader.consume(corrected_last_length);
                     trace!(" -- wrote last chunk: {}", corrected_last_length);
                     buf_writer.flush()?;
@@ -357,7 +354,7 @@ fn write_to_disk(
                     buf_writer.write_all(&buffer)?;
                     total_written += length;
                     total += length;
-                    trace!(" -- wrote {}/{}-byte chunk to temp file", total, data_size);
+                    trace!(" -- wrote {}/{}-byte chunk to temp file", length, total);
                     buffer_reader.consume(length);
                 }
             }
