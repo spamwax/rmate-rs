@@ -433,27 +433,31 @@ fn write_to_disk(
         ))
         .and_then(|opened_buffer| {
             let fn_canon = opened_buffer.canon_path.as_path();
-            let mut backup_fn_canon: std::path::PathBuf = opened_buffer.canon_path.clone();
+            let mut backup_fn_canon = opened_buffer.canon_path.clone();
             let mut backup_fn = backup_fn_canon.file_name().unwrap().to_os_string();
             backup_fn.push("~");
             backup_fn_canon.set_file_name(&backup_fn);
-            let mut can_backup = false;
+            let mut can_backup = true;
             let mut no_backup_tries = 0;
-            while no_backup_tries < 5 {
-                if backup_fn_canon.is_file() {
+            while backup_fn_canon.is_file() {
+                if no_backup_tries < settings::NO_TRIES_CREATE_BACKUP_FN {
                     no_backup_tries += 1;
                     backup_fn.push("~");
                     backup_fn_canon.set_file_name(&backup_fn);
                     continue;
                 } else {
-                    can_backup = true;
+                    warn!(
+                        "Cannot backup, Why there is a file named: {}",
+                        backup_fn_canon.display()
+                    );
+                    can_backup = false;
                     break;
                 }
             }
+
             let mut backup = None;
-            trace!("can_backup: {}", can_backup);
-            trace!("backup_fn_canon: {}", backup_fn_canon.display());
             if can_backup {
+                trace!("Backing up to: {}", backup_fn_canon.display());
                 if let Err(e) = std::fs::copy(fn_canon, backup_fn_canon.as_path()) {
                     warn!(
                         "Couldn't write to backup: {} ({})",

@@ -3,6 +3,8 @@ use std::fs::File;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
+pub(crate) const NO_TRIES_CREATE_BACKUP_FN: u8 = 5;
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rmate", about = "rmate ♥ Rust (TextMate & Sublime Text)")]
 pub(crate) struct Settings {
