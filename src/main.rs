@@ -492,7 +492,7 @@ fn write_to_disk(
                 )
             });
             if copy_result.is_ok() {
-                Ok((copy_result.unwrap(), fn_canon))
+                Ok((copy_result.unwrap(), fn_canon, backup))
             } else {
                 error!("Couldn't save to main file ({})", fn_canon.display());
                 error!("  Remote changes are not applied.");
@@ -520,9 +520,18 @@ fn write_to_disk(
                 }
             }
         })
-        .and_then(|(written_size, fn_canon)| {
+        .and_then(|(written_size, fn_canon, backup)| {
             assert_eq!(total_written as u64, written_size);
             info!("Saved to {:?}", fn_canon);
+            if let Some(backup_fn) = backup {
+                if let Err(e) = std::fs::remove_file(&backup_fn) {
+                    debug!(
+                        "Couldn't remove back up file: {} ({})",
+                        backup_fn.display(),
+                        e.to_string()
+                    );
+                }
+            }
             Ok(written_size as usize)
         })
 }
@@ -543,36 +552,3 @@ fn is_writable<P: AsRef<Path>>(p: P, md: &std::fs::Metadata) -> bool {
 // } else {
 //     std::ffi::OsString::from("rmate_rust_no_HOST_env_variable")
 // };
-
-// let copy_result = std::io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
-//     Error::new(
-//         ErrorKind::Other,
-//         format!("{}: {:?}", fn_canon.to_string_lossy(), e),
-//     )
-// });
-// match copy_result {
-//     Ok(n) => Ok((n, fn_canon)),
-//     Err(e) => {
-// if let Some(backup_fn) = backup {
-//     if std::fs::copy(&backup_fn, &fn_canon).is_err() {
-//         error!("Couldn't save to main file ({}) and couldn't restore the maini file from backup ({})", fn_canon.display(), backup_fn.display());
-//         error!("Your data should be safe in backup file: {}", backup_fn.display());
-//         panic!("Halting all operations due to unrceoverable write errors");
-//     } else {
-// if let Err(e) = std::fs::remove_file(&backup_fn) {
-//     warn!(
-//         "Couldn't remove the backup file: {} ({})",
-//         backup_fn.display(),
-//         e.to_string()
-//     );
-// }
-//         Ok(0),
-//     }
-// } else {
-//         error!("Couldn't save to main file ({}) and couldn't restore the maini file from backup ({})", fn_canon.display(), backup_fn.display());
-//         error!("Your data should be safe in backup file: {}", backup_fn.display());
-//         panic!("Halting all operations due to unrceoverable write errors");
-
-// }
-//     }
-// }
