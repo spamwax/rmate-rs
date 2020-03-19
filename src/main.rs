@@ -384,10 +384,7 @@ fn write_to_disk(
                     trace!("  data_size: {}", data_size);
                     trace!("  left over size: {}", length - corrected_last_length);
                     buf_writer.write_all(&buffer[..corrected_last_length])?;
-                    trace!(
-                        "extra bytes read {}",
-                        String::from_utf8_lossy(&buffer[corrected_last_length..])
-                    );
+                    // trace!( "extra bytes read {}", String::from_utf8_lossy(&buffer[corrected_last_length..]));
                     buffer_reader.consume(corrected_last_length);
                     trace!(" -- wrote last chunk: {}", corrected_last_length);
                     buf_writer.flush()?;
@@ -436,6 +433,41 @@ fn write_to_disk(
         ))
         .and_then(|opened_buffer| {
             let fn_canon = opened_buffer.canon_path.as_path();
+            let mut backup_fn_canon: std::path::PathBuf = opened_buffer.canon_path.clone();
+            let mut backup_fn = backup_fn_canon.file_name().unwrap().to_os_string();
+            backup_fn.push("~");
+            backup_fn_canon.set_file_name(&backup_fn);
+            let mut can_backup = false;
+            let mut no_backup_tries = 0;
+            while no_backup_tries < 5 {
+                if backup_fn_canon.is_file() {
+                    no_backup_tries += 1;
+                    backup_fn.push("~");
+                    backup_fn_canon.set_file_name(&backup_fn);
+                    continue;
+                } else {
+                    can_backup = true;
+                    break;
+                }
+            }
+            let mut backup = None;
+            trace!("can_backup: {}", can_backup);
+            trace!("backup_fn_canon: {}", backup_fn_canon.display());
+            if can_backup {
+                if let Err(e) = std::fs::copy(fn_canon, backup_fn_canon.as_path()) {
+                    warn!(
+                        "Couldn't write to backup: {} ({})",
+                        backup_fn_canon.display(),
+                        e.to_string()
+                    );
+                } else {
+                    backup = Some(backup_fn_canon);
+                }
+            }
+            Ok((opened_buffer, backup))
+        })
+        .and_then(|(opened_buffer, backup)| {
+            let fn_canon = opened_buffer.canon_path.as_path();
             let fp = OpenOptions::new()
                 .write(true)
                 .truncate(true)
@@ -452,14 +484,41 @@ fn write_to_disk(
 
             let mut buffer_writer = BufWriter::new(fp);
             let mut buffer_reader = BufReader::new(temp_reader_sized);
-            let written_size =
-                std::io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
-                    Error::new(
-                        ErrorKind::Other,
-                        format!("{}: {:?}", fn_canon.to_string_lossy(), e),
-                    )
-                })?;
-            Ok((written_size, fn_canon))
+
+            let copy_result = std::io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
+                Error::new(
+                    ErrorKind::Other,
+                    format!("{}: {:?}", fn_canon.to_string_lossy(), e),
+                )
+            });
+            if copy_result.is_ok() {
+                Ok((copy_result.unwrap(), fn_canon))
+            } else {
+                error!("Couldn't save to main file ({})", fn_canon.display());
+                error!("  Remote changes are not applied.");
+                // If saving didn't succeed, we try to restore from backup
+                if let Some(backup_fn) = backup {
+                    match std::fs::copy(&backup_fn, &fn_canon) {
+                        // Restored from backup, but changes sent from remote were not applied
+                        // Inform the user
+                        Ok(_) => trace!("  Your file is untouched at: {}", backup_fn.display()),
+                        Err(_e) => {
+                            error!("  File on disk may be corrupt but");
+                            error!("  its backup is safe at: {}", backup_fn.display());
+                            panic!("Halting all operations due to unrceoverable write errors");
+                        }
+                    }
+                    Err(copy_result.unwrap_err())
+                }
+                // We don't have any backups!!!
+                else {
+                    error!(
+                        "{:?} MAY have been CORRUPTED.",
+                        fn_canon.file_name().unwrap()
+                    );
+                    panic!("Halting all operations due to unrceoverable write errors");
+                }
+            }
         })
         .and_then(|(written_size, fn_canon)| {
             assert_eq!(total_written as u64, written_size);
@@ -484,3 +543,36 @@ fn is_writable<P: AsRef<Path>>(p: P, md: &std::fs::Metadata) -> bool {
 // } else {
 //     std::ffi::OsString::from("rmate_rust_no_HOST_env_variable")
 // };
+
+// let copy_result = std::io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
+//     Error::new(
+//         ErrorKind::Other,
+//         format!("{}: {:?}", fn_canon.to_string_lossy(), e),
+//     )
+// });
+// match copy_result {
+//     Ok(n) => Ok((n, fn_canon)),
+//     Err(e) => {
+// if let Some(backup_fn) = backup {
+//     if std::fs::copy(&backup_fn, &fn_canon).is_err() {
+//         error!("Couldn't save to main file ({}) and couldn't restore the maini file from backup ({})", fn_canon.display(), backup_fn.display());
+//         error!("Your data should be safe in backup file: {}", backup_fn.display());
+//         panic!("Halting all operations due to unrceoverable write errors");
+//     } else {
+// if let Err(e) = std::fs::remove_file(&backup_fn) {
+//     warn!(
+//         "Couldn't remove the backup file: {} ({})",
+//         backup_fn.display(),
+//         e.to_string()
+//     );
+// }
+//         Ok(0),
+//     }
+// } else {
+//         error!("Couldn't save to main file ({}) and couldn't restore the maini file from backup ({})", fn_canon.display(), backup_fn.display());
+//         error!("Your data should be safe in backup file: {}", backup_fn.display());
+//         panic!("Halting all operations due to unrceoverable write errors");
+
+// }
+//     }
+// }
