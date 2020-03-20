@@ -3,6 +3,7 @@ use log::*;
 use socket2::{Domain, Type};
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::env;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::fs::{canonicalize, metadata};
@@ -10,15 +11,15 @@ use std::hash::{Hash, Hasher};
 use std::io::prelude::*;
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, SeekFrom, Write};
 use std::net::{IpAddr, Ipv4Addr};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::{fs, io};
 
 // use std::path::PathBuf;
 
-// TODO: make a backup copy of files being saved? <08-03-20, yourname> //
 // TODO: read config files (/etc/rmate.conf)? <08-03-20, yourname> //
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
 // TODO: Improve error handling, don't crash if an error happens while other buffers are open. <16-03-20, hamid> //
-// TODO: Can we correct the fork() error number to a proper io::Error? <18-03-20, hamid> //
+// TODO: Can we convert the fork() error number to a proper io::Error? <18-03-20, hamid> //
 
 mod settings;
 use settings::OpenedBuffer;
@@ -26,10 +27,10 @@ use settings::Settings;
 use structopt::StructOpt;
 
 fn main() -> Result<(), String> {
-    let settings = Settings::from_args();
+    let mut settings = Settings::from_args();
 
     let level;
-    match std::env::var("RUST_LOG") {
+    match env::var("RUST_LOG") {
         Err(_) => {
             match settings.verbose {
                 0 => level = "warn",
@@ -37,11 +38,18 @@ fn main() -> Result<(), String> {
                 2 => level = "debug",
                 _ => level = "trace",
             }
-            std::env::set_var("RUST_LOG", level);
+            env::set_var("RUST_LOG", level);
         }
         _ => {}
     }
     env_logger::init();
+
+    // Set host/port if user didn't specify in arguments and
+    // we found them in one of rmate.rc files. Otherwise use
+    // default values.
+    let disk_settings = read_disk_settings();
+    settings.host.get_or_insert(disk_settings.0);
+    settings.port.get_or_insert(disk_settings.1);
 
     trace!("rmate settings: {:#?}", settings);
 
@@ -62,6 +70,64 @@ fn main() -> Result<(), String> {
     handle_remote(socket, buffers).map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+// Read host/settings from rmate.rc files
+fn read_disk_settings() -> (String, u16) {
+    let host_port = (settings::RMATE_HOST.to_string(), settings::RMATE_PORT);
+    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc"]
+        .iter()
+        .map(|path| {
+            if path.starts_with("~/") && dirs::home_dir().is_some() {
+                canonicalize(dirs::home_dir().unwrap().join(&path[2..]))
+            } else {
+                canonicalize(path)
+            }
+        })
+        .filter(|canon| canon.is_ok())
+        .map(|canon| {
+            let path = canon.unwrap();
+            let fname = &Path::new(&path);
+            (File::open(fname), path)
+        })
+        .inspect(|(file_result, path)| {
+            if file_result.is_err() {
+                trace!("Cannot open {}", path.display());
+            } else {
+                trace!("Found rc file at: {}", path.display());
+            }
+        })
+        .filter(|(file_result, _)| file_result.is_ok())
+        .map(|(fp, path)| {
+            let buf_reader = BufReader::new(fp.unwrap());
+            (serde_yaml::from_reader(buf_reader), path)
+        })
+        .inspect(
+            |(s, path): &(Result<settings::RcSettings, serde_yaml::Error>, PathBuf)| {
+                if s.is_err() {
+                    trace!("Error parsing data in {}", path.display());
+                    trace!("  {:?}", s.as_ref().unwrap_err());
+                } else {
+                    trace!(
+                        "Read disk settings-> {{ host: {:?}\tport: {:?} }}",
+                        s.as_ref().unwrap().host.as_ref(),
+                        s.as_ref().unwrap().port.as_ref(),
+                    );
+                }
+            },
+        )
+        .filter(|(s, _)| s.is_ok())
+        .map(|(s, _)| s.unwrap())
+        .fold(host_port, |acc, item: settings::RcSettings| {
+            let (mut newhost, mut newport) = acc;
+            if let Some(host) = item.host {
+                newhost = host;
+            }
+            if let Some(port) = item.port {
+                newport = port;
+            }
+            (newhost, newport)
+        })
 }
 
 // On successfull fork(), parent return true and child returns false.
@@ -85,16 +151,19 @@ fn run_fork() -> Result<bool, String> {
 fn connect_to_editor(settings: &Settings) -> Result<socket2::Socket, std::io::Error> {
     let socket = socket2::Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
 
-    debug!("Host: {}", settings.host);
-    let addr_srv = if settings.host == "localhost" {
+    debug!("Host: {}", settings.host.as_ref().unwrap());
+    let host = settings.host.as_ref().unwrap();
+    let addr_srv = if host == "localhost" {
         IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
     } else {
         settings
             .host
+            .as_ref()
+            .unwrap()
             .parse::<IpAddr>()
             .map_err(|e| Error::new(ErrorKind::AddrNotAvailable, e.to_string()))?
     };
-    let port = settings.port;
+    let port = settings.port.unwrap();
     let addr_srv = std::net::SocketAddr::new(addr_srv, port).into();
 
     debug!("About to connect to {:?}", addr_srv);
@@ -435,8 +504,10 @@ fn write_to_disk(
             let fn_canon = opened_buffer.canon_path.as_path();
             let mut backup_fn_canon = opened_buffer.canon_path.clone();
             let mut backup_fn = backup_fn_canon.file_name().unwrap().to_os_string();
+
             backup_fn.push("~");
             backup_fn_canon.set_file_name(&backup_fn);
+
             let mut can_backup = true;
             let mut no_backup_tries = 0;
             while backup_fn_canon.is_file() {
@@ -458,7 +529,7 @@ fn write_to_disk(
             let mut backup = None;
             if can_backup {
                 trace!("Backing up to: {}", backup_fn_canon.display());
-                if let Err(e) = std::fs::copy(fn_canon, backup_fn_canon.as_path()) {
+                if let Err(e) = fs::copy(fn_canon, backup_fn_canon.as_path()) {
                     warn!(
                         "Couldn't write to backup: {} ({})",
                         backup_fn_canon.display(),
@@ -489,7 +560,7 @@ fn write_to_disk(
             let mut buffer_writer = BufWriter::new(fp);
             let mut buffer_reader = BufReader::new(temp_reader_sized);
 
-            let copy_result = std::io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
+            let copy_result = io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
                 Error::new(
                     ErrorKind::Other,
                     format!("{}: {:?}", fn_canon.to_string_lossy(), e),
@@ -502,10 +573,13 @@ fn write_to_disk(
                 error!("  Remote changes are not applied.");
                 // If saving didn't succeed, we try to restore from backup
                 if let Some(backup_fn) = backup {
-                    match std::fs::copy(&backup_fn, &fn_canon) {
+                    match fs::copy(&backup_fn, &fn_canon) {
                         // Restored from backup, but changes sent from remote were not applied
                         // Inform the user
-                        Ok(_) => trace!("  Your file is untouched at: {}", backup_fn.display()),
+                        Ok(_) => trace!(
+                            "  Your original file is untouched at: {}",
+                            fn_canon.display()
+                        ),
                         Err(_e) => {
                             error!("  File on disk may be corrupt but");
                             error!("  its backup is safe at: {}", backup_fn.display());
@@ -528,7 +602,7 @@ fn write_to_disk(
             assert_eq!(total_written as u64, written_size);
             info!("Saved to {:?}", fn_canon);
             if let Some(backup_fn) = backup {
-                if let Err(e) = std::fs::remove_file(&backup_fn) {
+                if let Err(e) = fs::remove_file(&backup_fn) {
                     debug!(
                         "Couldn't remove back up file: {} ({})",
                         backup_fn.display(),
@@ -546,7 +620,7 @@ fn write_to_disk(
 // So it seems actually trying to open the file in write mode is
 // the only reliable way of checking the write access of current
 // user in a cross platform manner
-fn is_writable<P: AsRef<Path>>(p: P, md: &std::fs::Metadata) -> bool {
+fn is_writable<P: AsRef<Path>>(p: P, md: &fs::Metadata) -> bool {
     !md.permissions().readonly() && OpenOptions::new().write(true).append(true).open(p).is_ok()
 }
 

@@ -1,27 +1,25 @@
+use serde::Deserialize;
 use std::ffi::OsString;
 use std::fs::File;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
 pub(crate) const NO_TRIES_CREATE_BACKUP_FN: u8 = 5;
+pub(crate) const RMATE_HOST: &'static str = "localhost";
+pub(crate) const RMATE_PORT: u16 = 52698;
 
+// program settings from command-line arguments and environment variables
 #[derive(Debug, StructOpt)]
 #[structopt(name = "rmate", about = "rmate ♥ Rust (TextMate & Sublime Text)")]
 pub(crate) struct Settings {
     /// Connect to HOST. Use 'auto' to detect the host from SSH
     /// Defalts to localhost
-    #[structopt(
-        short = "H",
-        long = "--host",
-        env = "RMATE_HOST",
-        name = "HOST",
-        default_value = "localhost"
-    )]
-    pub host: String,
+    #[structopt(short = "H", long = "--host", env = "RMATE_HOST", name = "HOST")]
+    pub host: Option<String>,
 
     /// Port number to use for connection. Defalts to 52698
-    #[structopt(short, long, env = "RMATE_PORT", default_value = "52698")]
-    pub port: u16,
+    #[structopt(short, long, env = "RMATE_PORT")]
+    pub port: Option<u16>,
 
     /// Wait for file to be closed by TextMate/Sublime Text
     #[structopt(short, long)]
@@ -52,8 +50,7 @@ pub(crate) struct Settings {
     pub files: Vec<OsString>,
 }
 
-// use std::collections::hash_map::HashMap;
-
+// struct to hold info about each opened file
 #[derive(Debug)]
 pub(crate) struct OpenedBuffer {
     pub(crate) canon_path: PathBuf,
@@ -65,18 +62,9 @@ pub(crate) struct OpenedBuffer {
     pub(crate) size: u64,
 }
 
-impl Default for Settings {
-    fn default() -> Self {
-        Settings {
-            host: "localhost".to_string(),
-            port: 52698,
-            wait: false,
-            force: false,
-            verbose: 0,
-            lines: vec![],
-            filetypes: vec![],
-            names: vec![],
-            files: vec![],
-        }
-    }
+#[derive(Debug, Deserialize)]
+pub struct RcSettings {
+    pub(crate) host: Option<String>,
+    pub(crate) port: Option<u16>,
+    pub(crate) unixsocket: Option<String>,
 }
