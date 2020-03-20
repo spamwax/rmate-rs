@@ -74,9 +74,13 @@ fn main() -> Result<(), String> {
 
 // Read host/settings from rmate.rc files
 fn read_disk_settings() -> (String, u16) {
+    trace!("Loading settings from rmate.rc file");
     let host_port = (settings::RMATE_HOST.to_string(), settings::RMATE_PORT);
     ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc"]
         .iter()
+        .inspect(|path| {
+            trace!("Trying {}", path);
+        })
         .map(|path| {
             if path.starts_with("~/") && dirs::home_dir().is_some() {
                 canonicalize(dirs::home_dir().unwrap().join(&path[2..]))
