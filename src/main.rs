@@ -74,7 +74,7 @@ fn main() -> Result<(), String> {
 
 // Read host/settings from rmate.rc files
 fn read_disk_settings() -> (String, u16) {
-    trace!("Loading settings from rmate.rc file");
+    trace!("Loading settings from rmate.rc files");
     let host_port = (settings::RMATE_HOST.to_string(), settings::RMATE_PORT);
     ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc"]
         .iter()
@@ -96,9 +96,9 @@ fn read_disk_settings() -> (String, u16) {
         })
         .inspect(|(file_result, path)| {
             if file_result.is_err() {
-                trace!("Cannot open {}", path.display());
+                trace!("  Cannot open {}", path.display());
             } else {
-                trace!("Found rc file at: {}", path.display());
+                trace!("  Found rc file at: {}", path.display());
             }
         })
         .filter(|(file_result, _)| file_result.is_ok())
@@ -109,11 +109,11 @@ fn read_disk_settings() -> (String, u16) {
         .inspect(
             |(s, path): &(Result<settings::RcSettings, serde_yaml::Error>, PathBuf)| {
                 if s.is_err() {
-                    trace!("Error parsing data in {}", path.display());
-                    trace!("  {:?}", s.as_ref().unwrap_err());
+                    trace!("  Error parsing data in {}", path.display());
+                    trace!("    {:?}", s.as_ref().unwrap_err());
                 } else {
                     trace!(
-                        "Read disk settings-> {{ host: {:?}\tport: {:?} }}",
+                        "  Read disk settings-> {{ host: {:?}\tport: {:?} }}",
                         s.as_ref().unwrap().host.as_ref(),
                         s.as_ref().unwrap().port.as_ref(),
                     );
