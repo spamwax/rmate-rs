@@ -18,3 +18,10 @@ Session.vim
 cscope.*
 node_modules
 target
+Cargo
+ab
+fook.txt
+rmate.py
+foo.hpp
+gnuplot
+vector*
