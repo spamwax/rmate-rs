@@ -10,7 +10,11 @@ pub(crate) const RMATE_PORT: u16 = 52698;
 
 // program settings from command-line arguments and environment variables
 #[derive(Debug, StructOpt)]
-#[structopt(name = "rmate", about = "rmate ♥ Rust (TextMate & Sublime Text)")]
+#[structopt(
+    name = "rmate",
+    author = "h@mid.fyi",
+    about = "rmate ♥ Rust (TextMate & Sublime Text)"
+)]
 pub(crate) struct Settings {
     /// Connect to HOST. Use 'auto' to detect the host from SSH
     /// Defalts to localhost
@@ -18,7 +22,7 @@ pub(crate) struct Settings {
     pub host: Option<String>,
 
     /// Port number to use for connection. Defalts to 52698
-    #[structopt(short, long, env = "RMATE_PORT")]
+    #[structopt(short, long, env = "RMATE_PORT", min_values = 1)]
     pub port: Option<u16>,
 
     /// Wait for file to be closed by TextMate/Sublime Text

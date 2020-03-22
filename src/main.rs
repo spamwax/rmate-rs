@@ -14,12 +14,10 @@ use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
 
-// use std::path::PathBuf;
-
-// TODO: read config files (/etc/rmate.conf)? <08-03-20, yourname> //
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
-// TODO: Improve error handling, don't crash if an error happens while other buffers are open. <16-03-20, hamid> //
 // TODO: Can we convert the fork() error number to a proper io::Error? <18-03-20, hamid> //
+// TODO: refactor setting related files to settings.rs <20-03-20, hamid> //
+// TODO: implement host=auto from SSH_CONNECTIONS <20-03-20, hamid> //
 
 mod settings;
 use settings::OpenedBuffer;
