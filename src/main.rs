@@ -13,6 +13,7 @@ use std::io::prelude::*;
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, SeekFrom, Write};
 use std::net::{IpAddr, Ipv4Addr};
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 use std::{fs, io};
 
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
@@ -419,6 +420,7 @@ fn write_to_disk(
     trace!("  token: >{}<", token);
     myline.clear();
 
+    let t1 = Instant::now();
     let mut total_written = 0usize;
     {
         // Get the info about which file we are receiving data for.
@@ -501,6 +503,9 @@ fn write_to_disk(
             // }
         }
     }
+    let t2 = Instant::now();
+    let elapsed = t2 - t1;
+    info!("Time spent saving to temp file: {}", elapsed.as_micros());
 
     debug!("Bytes written to temp file: {}", total_written);
     // Open the file we are supposed to actuallly save to, and copy
