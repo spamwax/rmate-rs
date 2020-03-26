@@ -508,7 +508,7 @@ fn write_to_disk(
     let t2 = Instant::now();
     let elapsed = t2 - t1;
     debug!(
-        "Time spent saving to temp file: {} micros ({} chunks of save)",
+        " * time spent saving to temp file: {} micros ({} chunks of save)",
         elapsed.as_micros(),
         no_data_chunks
     );
