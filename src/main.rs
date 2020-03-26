@@ -1,6 +1,7 @@
 use fork::{fork, Fork};
 use log::*;
 use socket2::{Domain, Type};
+use std::cmp;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::env;
@@ -364,7 +365,7 @@ fn handle_remote(
             "save" => {
                 trace!("--> About to call write_to_disk()");
                 myline.clear();
-                match write_to_disk(&mut opened_buffers, &mut buffer_reader) {
+                match write_to_disk(&mut opened_buffers, &mut buffer_reader, bsize) {
                     Ok(n) => total += n,
                     Err(e) => error!("Couldn't save: {}", e.to_string()),
                 }
@@ -406,6 +407,7 @@ fn close_buffer(
 fn write_to_disk(
     opened_buffers: &mut HashMap<String, OpenedBuffer>,
     buffer_reader: &mut BufReader<&socket2::Socket>,
+    buf_size: usize,
 ) -> Result<usize, std::io::Error> {
     let mut myline = String::with_capacity(128);
 
@@ -441,13 +443,16 @@ fn write_to_disk(
             myline.clear();
 
             let mut total = 0usize;
-            let mut buffer = vec![0u8; buffer_reader.buffer().len()];
+            let reader_len = buffer_reader.buffer().len();
+            trace!("  reader len: {}", reader_len);
+
+            let mut buffer = vec![0u8; cmp::max(buffer_reader.buffer().len(), buf_size)];
             let mut chunk_reader = buffer_reader.take(data_size as u64);
             trace!("  buffer len: {}", buffer.len());
             loop {
                 let n = chunk_reader.read(&mut buffer)?;
-                trace!("  n = {}", n);
                 if n == 0 {
+                    trace!("  n = {}", n);
                     total_written += total;
                     trace!("  total_written = {}", total_written);
                     break;
@@ -455,7 +460,7 @@ fn write_to_disk(
                 buf_writer.write_all(&buffer[..n])?;
                 total += n;
                 trace!(
-                    " -- written so far: {}/{}-byte (chunk: {}) to temp file",
+                    "   - written so far: {}/{}-byte (chunk: {}) to temp file",
                     total,
                     data_size,
                     n
