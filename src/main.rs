@@ -422,6 +422,7 @@ fn write_to_disk(
 
     let t1 = Instant::now();
     let mut total_written = 0usize;
+    let mut no_data_chunks = 0usize;
     {
         // Get the info about which file we are receiving data for.
         let rand_temp_file = &mut opened_buffers.get_mut(&token).unwrap().temp_file;
@@ -437,6 +438,7 @@ fn write_to_disk(
             }
             trace!("  -->  save instruction:\t{:?}", myline.trim());
             assert!(myline.trim().contains("data: "));
+            no_data_chunks += 1;
             let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
                 .trim()
                 .parse::<usize>()
@@ -505,7 +507,11 @@ fn write_to_disk(
     }
     let t2 = Instant::now();
     let elapsed = t2 - t1;
-    info!("Time spent saving to temp file: {}", elapsed.as_micros());
+    debug!(
+        "Time spent saving to temp file: {} micros ({} chunks of save)",
+        elapsed.as_micros(),
+        no_data_chunks
+    );
 
     debug!("Bytes written to temp file: {}", total_written);
     // Open the file we are supposed to actuallly save to, and copy
