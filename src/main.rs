@@ -424,6 +424,7 @@ fn write_to_disk(
         rand_temp_file.seek(SeekFrom::Start(0))?;
 
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
+        // Remote editor may send multiple "data: SIZE" sections under one "save" command
         loop {
             buffer_reader.read_line(&mut myline)?;
             if myline.trim().is_empty() {
@@ -439,41 +440,60 @@ fn write_to_disk(
             trace!("  save size:\t{:?}", data_size);
             myline.clear();
 
-            // Remote editor may send multiple "data: SIZE" sections under one "save" command
             let mut total = 0usize;
+            let mut buffer = vec![0u8; buffer_reader.buffer().len()];
+            let mut chunk_reader = buffer_reader.take(data_size as u64);
+            trace!("  buffer len: {}", buffer.len());
             loop {
-                let buffer = buffer_reader.fill_buf()?;
-                if buffer.is_empty() {
-                    warn!("HMMMMMMMMM..........MMMMMMMMMMMM");
+                let n = chunk_reader.read(&mut buffer)?;
+                trace!("  n = {}", n);
+                if n == 0 {
+                    total_written += total;
+                    trace!("  total_written = {}", total_written);
                     break;
                 }
-                let length = buffer.len();
-                if total + length >= data_size {
-                    trace!("Total recvd: {}", total + length);
-                    trace!("length: {}", length);
-                    let corrected_last_length = data_size - total;
-                    trace!("  data_size: {}", data_size);
-                    trace!("  left over size: {}", length - corrected_last_length);
-                    buf_writer.write_all(&buffer[..corrected_last_length])?;
-                    // trace!( "extra bytes read {}", String::from_utf8_lossy(&buffer[corrected_last_length..]));
-                    buffer_reader.consume(corrected_last_length);
-                    trace!(" -- wrote last chunk: {}", corrected_last_length);
-                    buf_writer.flush()?;
-                    total_written += corrected_last_length;
-                    break;
-                } else {
-                    buf_writer.write_all(&buffer)?;
-                    total_written += length;
-                    total += length;
-                    trace!(
-                        " -- written so far: {}/{}-byte (chunk: {}) to temp file",
-                        total,
-                        data_size,
-                        length
-                    );
-                    buffer_reader.consume(length);
-                }
+                buf_writer.write_all(&buffer[..n])?;
+                total += n;
+                trace!(
+                    " -- written so far: {}/{}-byte (chunk: {}) to temp file",
+                    total,
+                    data_size,
+                    n
+                );
             }
+            // loop {
+            //     let buffer = buffer_reader.fill_buf()?;
+            //     if buffer.is_empty() {
+            //         warn!("HMMMMMMMMM..........MMMMMMMMMMMM");
+            //         break;
+            //     }
+            //     let length = buffer.len();
+            //     if total + length >= data_size {
+            //         trace!("Total recvd: {}", total + length);
+            //         trace!("length: {}", length);
+            //         let corrected_last_length = data_size - total;
+            //         trace!("  data_size: {}", data_size);
+            //         trace!("  left over size: {}", length - corrected_last_length);
+            //         buf_writer.write_all(&buffer[..corrected_last_length])?;
+            //         // trace!( "extra bytes read {}", String::from_utf8_lossy(&buffer[corrected_last_length..]));
+            //         buffer_reader.consume(corrected_last_length);
+            //         trace!(" -- wrote last chunk: {}", corrected_last_length);
+            //         buf_writer.flush()?;
+            //         total_written += corrected_last_length;
+            //         break;
+            //     } else {
+            //         buf_writer.write_all(&buffer)?;
+            //         total_written += length;
+            //         total += length;
+            //         trace!(
+            //             " -- written so far: {}/{}-byte (chunk: {}) to temp file",
+            //             total,
+            //             data_size,
+            //             length
+            //         );
+            //         buffer_reader.consume(length);
+            //     }
+            // }
         }
     }
 
@@ -503,6 +523,7 @@ fn write_to_disk(
             "can't find the open buffer for saving",
         ))
         .and_then(|opened_buffer| {
+            // First we try to create a file name to be used as back up of original one
             let fn_canon = opened_buffer.canon_path.as_path();
             let mut backup_fn_canon = opened_buffer.canon_path.clone();
             let mut backup_fn = backup_fn_canon.file_name().unwrap().to_os_string();
@@ -544,6 +565,7 @@ fn write_to_disk(
             Ok((opened_buffer, backup))
         })
         .and_then(|(opened_buffer, backup)| {
+            // Back up the original file before writing over it from temp. file
             let fn_canon = opened_buffer.canon_path.as_path();
             let fp = OpenOptions::new()
                 .write(true)
@@ -562,6 +584,7 @@ fn write_to_disk(
             let mut buffer_writer = BufWriter::new(fp);
             let mut buffer_reader = BufReader::new(temp_reader_sized);
 
+            // Copy from temp over main file (exactly total_written bytes)
             let copy_result = io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
                 Error::new(
                     ErrorKind::Other,
@@ -601,6 +624,7 @@ fn write_to_disk(
             }
         })
         .and_then(|(written_size, fn_canon, backup)| {
+            // Verify # of bytes written & delete backup file
             assert_eq!(total_written as u64, written_size);
             info!("Saved to {:?}", fn_canon);
             if let Some(backup_fn) = backup {
@@ -610,6 +634,8 @@ fn write_to_disk(
                         backup_fn.display(),
                         e.to_string()
                     );
+                } else {
+                    trace!("Removed backup file: {:}", backup_fn.display());
                 }
             }
             Ok(written_size as usize)
