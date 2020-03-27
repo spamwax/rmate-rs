@@ -1,7 +1,11 @@
+use log::*;
 use serde::Deserialize;
 use std::ffi::OsString;
+use std::fs::canonicalize;
 use std::fs::File;
-use std::path::PathBuf;
+use std::io::BufReader;
+use std::path::{Path, PathBuf};
+use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
 pub(crate) const NO_TRIES_CREATE_BACKUP_FN: u8 = 5;
@@ -13,7 +17,8 @@ pub(crate) const RMATE_PORT: u16 = 52698;
 #[structopt(
     name = "rmate",
     author = "h@mid.fyi",
-    about = "rmate ♥ Rust (TextMate & Sublime Text)"
+    about = "rmate ♥ Rust (TextMate & Sublime Text)",
+    settings(&[AppSettings::ColoredHelp])
 )]
 pub(crate) struct Settings {
     /// Connect to HOST. Use 'auto' to detect the host from SSH
@@ -71,4 +76,66 @@ pub struct RcSettings {
     pub(crate) host: Option<String>,
     pub(crate) port: Option<u16>,
     pub(crate) unixsocket: Option<String>,
+}
+
+// Read host/settings from rmate.rc files
+pub(crate) fn read_disk_settings() -> (String, u16) {
+    trace!("Loading settings from rmate.rc files");
+    let host_port = (self::RMATE_HOST.to_string(), self::RMATE_PORT);
+    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc"]
+        .iter()
+        .inspect(|path| {
+            trace!("Trying {}", path);
+        })
+        .map(|path| {
+            if path.starts_with("~/") && dirs::home_dir().is_some() {
+                canonicalize(dirs::home_dir().unwrap().join(&path[2..]))
+            } else {
+                canonicalize(path)
+            }
+        })
+        .filter(|canon| canon.is_ok())
+        .map(|canon| {
+            let path = canon.unwrap();
+            let fname = &Path::new(&path);
+            (File::open(fname), path)
+        })
+        .inspect(|(file_result, path)| {
+            if file_result.is_err() {
+                trace!("  Cannot open {}", path.display());
+            } else {
+                trace!("  Found rc file at: {}", path.display());
+            }
+        })
+        .filter(|(file_result, _)| file_result.is_ok())
+        .map(|(fp, path)| {
+            let buf_reader = BufReader::new(fp.unwrap());
+            (serde_yaml::from_reader(buf_reader), path)
+        })
+        .inspect(
+            |(s, path): &(Result<self::RcSettings, serde_yaml::Error>, PathBuf)| {
+                if s.is_err() {
+                    trace!("  Error parsing data in {}", path.display());
+                    trace!("    {:?}", s.as_ref().unwrap_err());
+                } else {
+                    trace!(
+                        "  Read disk settings-> {{ host: {:?}\tport: {:?} }}",
+                        s.as_ref().unwrap().host.as_ref(),
+                        s.as_ref().unwrap().port.as_ref(),
+                    );
+                }
+            },
+        )
+        .filter(|(s, _)| s.is_ok())
+        .map(|(s, _)| s.unwrap())
+        .fold(host_port, |acc, item: self::RcSettings| {
+            let (mut newhost, mut newport) = acc;
+            if let Some(host) = item.host {
+                newhost = host;
+            }
+            if let Some(port) = item.port {
+                newport = port;
+            }
+            (newhost, newport)
+        })
 }
