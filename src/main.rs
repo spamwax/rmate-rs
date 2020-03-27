@@ -6,7 +6,6 @@ use std::io::{BufRead, BufReader, Error, ErrorKind};
 
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
 // TODO: Can we convert the fork() error number to a proper io::Error? <18-03-20, hamid> //
-// TODO: refactor setting related files to settings.rs <20-03-20, hamid> //
 // TODO: implement host=auto from SSH_CONNECTIONS <20-03-20, hamid> //
 
 mod file_handler;
