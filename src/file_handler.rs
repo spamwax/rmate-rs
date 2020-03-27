@@ -65,6 +65,7 @@ pub(crate) fn write_to_disk(
                     trace!("  n = {}", n);
                     total_written += total;
                     trace!("  total_written = {}", total_written);
+                    buf_writer.flush()?;
                     break;
                 }
                 buf_writer.write_all(&buffer[..n])?;
@@ -214,6 +215,7 @@ pub(crate) fn write_to_disk(
                 )
             });
             if copy_result.is_ok() {
+                buffer_writer.flush()?;
                 Ok((copy_result.unwrap(), fn_canon, backup))
             } else {
                 error!("Couldn't save to main file ({})", fn_canon.display());
