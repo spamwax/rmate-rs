@@ -6,10 +6,10 @@ task:
     GHRELEASER_VERSION: v0.13.0
     BASH_CMD: /usr/local/bin/bash
     GITHUB_TOKEN: ENCRYPTED[4a8c923e354ae42d67658f757274d597870377fd90a06f5c4a2c2ad7d11083e2748936abd5615791ada71ed05c7ad130]
-  install_script:
+  install_deps_script:
     - echo $SHELL
     - pwd
-    - pkg install -y curl git go bash
+    - pkg install -y curl go bash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
     - set PATH=$HOME/.cago/bin:$PATH || true
   install_ghr_script: .cirrusci/install_ghr.sh
