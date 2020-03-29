@@ -4,7 +4,7 @@ freebsd_instance:
 task:
   env:
     GHRELEASER_VERSION: v0.13.0
-    CIRRUS_SHELL: bash
+    CIRRUS_SHELL: /usr/local/bin/bash
   install_script:
     - echo $SHELL
     - pwd
@@ -15,6 +15,7 @@ task:
     - cd /tmp && git clone https://github.com/tcnksm/ghr
     - cd ghr && go build
   clone_script:
-    - git clone https://github.com/listboss/rmate-rust.git
-    - cd rmate-rust
+    - git clone https://github.com/listboss/rmate-rust.git rmate
+    - ls -la
+    - cd rmate
     - cargo run -- --help
