@@ -23,4 +23,4 @@ else
     echo "This is a tagged commit, running before_deploy"
 fi
 
-
+main
