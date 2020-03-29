@@ -7,15 +7,17 @@ set -ex
 export PATH=$HOME/.cargo/bin:$PATH
 
 main() {
-    exoprt ghr_exe=/tmp/ghr/ghr
+    export ghr_exe=/tmp/ghr/ghr
+    echo $OS
+    echo $CIRRUS_OS
     export || true
     env || true
     setenv || true
     local src=$(pwd) stage=$(mktemp -d)
     os_name=$(uname -a | tr -s '[:blank:]' ' ' | cut -f 2 -d ' ') || os_name=freebsd-12.1
     arch=$(uname -a | tr -s '[:blank:]' ' ' | cut -f 8 -d ' ') || arch=amd64
-    CIRRUS_SHA1=$(git rev-parse --verify HEAD)
-    tar czvf "rmate_$os_name_$arch.tar.gz" "target/release/rmate"
+    CIRRUS_SHA1=$(git rev-parse --verify HEAD) || true
+    tar czvf "rmate_$os_name_$arch.tar.gz" "target/release/rmate" || true
     export artifacts=rmate.tar.gz
     echo ${CIRRUS_REPO_OWNER} ${CIRRUS_REPO_NAME} ${CIRRUS_SHA1} ${CIRCLE_TAG} ${artifacts}
     [ -f "$ghr" ] && ls -lh "$ghr"
