@@ -4,10 +4,10 @@ freebsd_instance:
 task:
   name: FreeBSD Build
   env:
-    GHRELEASER_VERSION: v0.13.0
     BASH_CMD: /usr/local/bin/bash
     CIRRUS_CLONE_DEPTH: 1
     HOME: /tmp
+    GITHUB_TOKEN: ENCRYPTED[4a8c923e354ae42d67658f757274d597870377fd90a06f5c4a2c2ad7d11083e2748936abd5615791ada71ed05c7ad130]
   install_deps_script:
     - pwd
     - pkg install -y curl go git bash
