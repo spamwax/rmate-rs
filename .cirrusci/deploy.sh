@@ -8,17 +8,13 @@ export PATH=$HOME/.cargo/bin:$PATH
 
 main() {
     export ghr_exe=/tmp/ghr/ghr
-    echo $OS
-    echo $CIRRUS_OS
-    export || true
-    env || true
-    setenv || true
     local src=$(pwd) stage=$(mktemp -d)
-    os_name=$(uname -a | tr -s '[:blank:]' ' ' | cut -f 2 -d ' ') || os_name=freebsd-12.1
-    arch=$(uname -a | tr -s '[:blank:]' ' ' | cut -f 8 -d ' ') || arch=amd64
+    os_name="$CIRRUS_OS"-$(freebsd-version -u | cut -f 1 -d '-') || os_name=freebsd-12.1
+    arch=x86_$(getconf LONG_BIT) || arch=x86_64
     CIRRUS_SHA1=$(git rev-parse --verify HEAD) || true
-    tar czvf "rmate_$os_name_$arch.tar.gz" "target/release/rmate" || true
-    export artifacts=rmate.tar.gz
+    export artifacts=rmate_"$os_name"_"$arch.tar.gz"
+    tar czvf "$artifact" "target/release/rmate" || true
+    ls -l
     echo ${CIRRUS_REPO_OWNER} ${CIRRUS_REPO_NAME} ${CIRRUS_SHA1} ${CIRCLE_TAG} ${artifacts}
     [ -f "$ghr" ] && ls -lh "$ghr"
     "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRRUS_SHA1} -delete ${CIRRUS_TAG} ${artifacts} || true
