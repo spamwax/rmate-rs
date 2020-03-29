@@ -12,6 +12,7 @@ main() {
     os_name="$CIRRUS_OS"-$(freebsd-version -u | cut -f 1 -d '-') || os_name=freebsd-12.1
     arch=x86_$(getconf LONG_BIT) || arch=x86_64
     CIRRUS_SHA1=$(git rev-parse --verify HEAD) || true
+    echo $CIRRUS_CHANGE_IN_REPO
     export artifacts=rmate_"$os_name"_"$arch.tar.gz"
     tar czvf "$artifacts" "target/release/rmate" || true
     ls -lh

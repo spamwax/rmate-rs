@@ -13,6 +13,8 @@ task:
     - pkg install -y curl go bash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
     - set PATH=$HOME/.cago/bin:$PATH || true
-  install_ghr_script: .cirrusci/install_ghr.sh
+  install_ghr_script:
+    - git clone https://github.com/tcnksm/ghr || true
+    - .cirrusci/install_ghr.sh
   build_script: .cirrusci/build.sh || true
   deploy_script: .cirrusci/deploy.sh || true
