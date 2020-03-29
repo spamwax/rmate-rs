@@ -11,17 +11,6 @@ task:
     - pkg install -y curl git go bash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
     - set PATH=$HOME/.cago/bin:$PATH || true
-  install_ghr_script:
-    - which cargo
-    - pwd
-    - cd /tmp && git clone https://github.com/tcnksm/ghr
-    - cd ghr && go build || true
-  build_script:
-    - pwd
-    - git clone https://github.com/listboss/rmate-rust.git rmate
-    - ls -la
-    - cd rmate
-    - cargo run -- --help || true
-  deploy_script:
-    - pwd
-    - .cirrusci/deploy.sh || true
+  install_ghr_script: .cirrusci/install_ghr.sh
+  build_script: .cirrusci/build.sh || true
+  deploy_script: .cirrusci/deploy.sh || true
