@@ -15,7 +15,7 @@ task:
     - .cirrusci/install_ghr.sh
   ghr_folder_cache:
     folder: ghr
-    fingerprint_script: md5 -q ghr/ghr
+    fingerprint_script: md5 -q /tmp/ghr/ghr
 
 task:
   name: Build & Deploy
