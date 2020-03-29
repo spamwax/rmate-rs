@@ -4,7 +4,7 @@ set -ex
 
 echo $SHELL
 echo $HOME
-echo $(pwd)
+pwd
 
 export PATH=$HOME/.cargo/bin:$PATH
 
