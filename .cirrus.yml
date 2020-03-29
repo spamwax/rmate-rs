@@ -11,9 +11,6 @@ task:
   install_deps_script:
     - pwd
     - pkg install -y curl go git bash
-  ghr_caching_cache:
-    folder: ghr
-    fingerprint_script: md5 -q ghr/ghr
   install_ghr_script:
     - pwd
     - .cirrusci/install_ghr.sh
