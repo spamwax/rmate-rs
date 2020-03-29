@@ -12,8 +12,10 @@ main() {
     env || true
     setenv || true
     local src=$(pwd) stage=$(mktemp -d)
+    os_name=$(uname -a | tr -s '[:blank:]' ' ' | cut -f 2 -d ' ') || os_name=freebsd-12.1
+    arch=$(uname -a | tr -s '[:blank:]' ' ' | cut -f 8 -d ' ') || arch=amd64
     CIRRUS_SHA1=$(git rev-parse --verify HEAD)
-    tar czvf rmate_freebsd-x86_64.tar.gz "target/release/rmate"
+    tar czvf "rmate_$os_name_$arch.tar.gz" "target/release/rmate"
     export artifacts=rmate.tar.gz
     echo ${CIRRUS_REPO_OWNER} ${CIRRUS_REPO_NAME} ${CIRRUS_SHA1} ${CIRCLE_TAG} ${artifacts}
     [ -f "$ghr" ] && ls -lh "$ghr"
