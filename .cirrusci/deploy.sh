@@ -19,12 +19,14 @@ main() {
 
 if [ -n "$CIRRUS_TEST" ]; then
     echo "CIRCLE_TEST is set, exitting"
+    exit 1 || true
 fi
-if [ -z "$CIRRUS_TAG" ]; then
+if [ -n "$CIRRUS_TAG" ]; then
     echo "Not a tagged commit, exitting."
-    exit 1
+    exit 1 || true
 elif [ -z "$GITHUB_TOKEN" ]; then
     echo "Github access token not set, exitting."
+    exit 2 || true
 else
     echo "This is a tagged commit, running before_deploy"
 fi
