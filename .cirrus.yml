@@ -2,11 +2,19 @@ freebsd_instance:
   image_family: freebsd-12-1
 
 task:
+  env:
+    GHRELEASER_VERSION: v0.13.0
+    CIRRUS_SHELL: bash
   install_script:
-    - pkg install -y curl bash git sh
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    - echo $SHELL
     - pwd
-  script:
+    - pkg install -y curl git go
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    - source $HOME/.cargo/env
+  install_ghr_script:
+    - cd /tmp && git clone https://github.com/tcnksm/ghr
+    - cd ghr && go build
+  clone_script:
     - git clone https://github.com/listboss/rmate-rust.git
     - cd rmate-rust
     - cargo run -- --help
