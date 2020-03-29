@@ -15,7 +15,6 @@ main() {
 
     export artifacts=rmate_"$os_name"_"$arch.tar.gz"
     tar czvf "$artifacts" "target/release/rmate" || true
-    ls -lh
     [ -f "$artifacts" ] || true
 
     CIRRUS_SHA1=$CIRRUS_CHANGE_IN_REPO

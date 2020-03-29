@@ -9,21 +9,15 @@ task:
     HOME: /tmp
     GITHUB_TOKEN: ENCRYPTED[4a8c923e354ae42d67658f757274d597870377fd90a06f5c4a2c2ad7d11083e2748936abd5615791ada71ed05c7ad130]
   install_deps_script:
-    - pwd
     - pkg install -y curl go git bash
   install_ghr_script:
-    - pwd
     - .cirrusci/install_ghr.sh
   install_rust_script:
     - echo "shell: $SHELL   home:$HOME"
-    - pwd
-    # - pkg install -y curl go bash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-    - set PATH=$HOME/.cago/bin:$PATH || true
-    - echo $PATH
-    - echo $CARGO_HOME
-  build_script: .cirrusci/build.sh || true
-  deploy_script: .cirrusci/deploy.sh || true
+    - set PATH=$HOME/.cago/bin:$PATH
+  build_script: .cirrusci/build.sh
+  deploy_script: .cirrusci/deploy.sh
   before_cache_script: rm -rf $HOME/.cargo/registry/index
   cargo_caching_cache:
     folder: $HOME/.cargo/registry
