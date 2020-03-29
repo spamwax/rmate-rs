@@ -13,7 +13,7 @@ main() {
     arch=x86_$(getconf LONG_BIT) || arch=x86_64
     CIRRUS_SHA1=$(git rev-parse --verify HEAD) || true
     export artifacts=rmate_"$os_name"_"$arch.tar.gz"
-    tar czvf "$artifact" "target/release/rmate" || true
+    tar czvf "$artifacts" "target/release/rmate" || true
     ls -l
     echo ${CIRRUS_REPO_OWNER} ${CIRRUS_REPO_NAME} ${CIRRUS_SHA1} ${CIRCLE_TAG} ${artifacts}
     [ -f "$ghr" ] && ls -lh "$ghr"
