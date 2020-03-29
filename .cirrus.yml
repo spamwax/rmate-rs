@@ -5,6 +5,7 @@ task:
   env:
     GHRELEASER_VERSION: v0.13.0
     BASH_CMD: /usr/local/bin/bash
+    CIRRUS_CLONE_DEPTH: 1
     GITHUB_TOKEN: ENCRYPTED[4a8c923e354ae42d67658f757274d597870377fd90a06f5c4a2c2ad7d11083e2748936abd5615791ada71ed05c7ad130]
   install_deps_script:
     - echo $SHELL
