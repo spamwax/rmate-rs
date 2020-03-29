@@ -3,9 +3,10 @@ freebsd_instance:
 
 task:
   install_script:
-    pkg install -y curl bash git
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    - pkg install -y curl bash git sh
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    - pwd
   script:
-    git clone https://github.com/listboss/rmate-rust.git
-    cd rmate-rust
-    cargo run -- --help
+    - git clone https://github.com/listboss/rmate-rust.git
+    - cd rmate-rust
+    - cargo run -- --help
