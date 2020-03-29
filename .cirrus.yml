@@ -3,6 +3,7 @@ freebsd_instance:
 
 task:
   name: FreeBSD Build
+  auto_cancellation: $CIRRUS_TAG == ''
   env:
     BASH_CMD: /usr/local/bin/bash
     CIRRUS_CLONE_DEPTH: 1
