@@ -4,14 +4,16 @@ freebsd_instance:
 task:
   env:
     GHRELEASER_VERSION: v0.13.0
-    CIRRUS_SHELL: /usr/local/bin/bash
+    BASH_CMD: /usr/local/bin/bash
   install_script:
     - echo $SHELL
     - pwd
-    - pkg install -y curl git go
+    - pkg install -y curl git go bash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-    - source $HOME/.cargo/env
+    - setenv PATH $HOME/.cago/bin\:$PATH
   install_ghr_script:
+    - which cargo
+    - pwd
     - cd /tmp && git clone https://github.com/tcnksm/ghr
     - cd ghr && go build
   clone_script:
