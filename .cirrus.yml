@@ -15,13 +15,13 @@ task:
     - which cargo
     - pwd
     - cd /tmp && git clone https://github.com/tcnksm/ghr
-    - cd ghr && go build
+    - cd ghr && go build || true
   build_script:
     - pwd
     - git clone https://github.com/listboss/rmate-rust.git rmate
     - ls -la
     - cd rmate
-    - cargo run -- --help
+    - cargo run -- --help || true
   deploy_script:
     - pwd
-    - .cirrusci/deploy.sh
+    - .cirrusci/deploy.sh || true
