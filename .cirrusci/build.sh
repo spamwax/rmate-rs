@@ -10,4 +10,4 @@ ls -la ../
 # cd rmate
 echo "path: $PATH"
 
-cargo run -- --help || true
+cargo run --release -- --help || true
