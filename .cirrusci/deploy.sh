@@ -4,7 +4,6 @@
 
 set -ex
 
-export PATH=$HOME/.cargo/bin:$PATH
 
 main() {
     local src=$(pwd) stage=$(mktemp -d)
@@ -24,18 +23,16 @@ main() {
     "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRRUS_REPO_OWNER} -r ${CIRRUS_REPO_NAME} -c ${CIRRUS_SHA1} -delete ${CIRRUS_TAG} ${artifacts} || true
 }
 
-if [ -n "$CIRRUS_TEST" ]; then
-    echo "CIRRUS_TEST is set, exitting"
-    exit 1 || true
-fi
-if [ -z "$CIRRUS_TAG" ]; then
-    echo "Not a tagged commit, exitting."
-    exit 1 || true
-elif [ -z "$GITHUB_TOKEN" ]; then
-    echo "Github access token not set, exitting."
-    exit 2 || true
+if [[ -n "$CIRRUS_TEST" || ( "$CIRRUS_BRANCH" == 'master' && -z "$CIRRUS_TAG" ) ]]; then
+    echo "This is a test or marster commit, FreeBSD CI only builds tagged releases."
+elif [ -n "$CIRRUS_TAG" ]; then
+    if [ -z "$GITHUB_TOKEN" ]; then
+        echo "Github access token not set, exitting."
+    else
+        echo "This is a tagged commit, running deploy.sh"
+        main
+    fi
 else
-    echo "This is a tagged commit, running before_deploy"
+    echo "Derp... (branch: ${CIRRUS_BRANCH})"
 fi
 
-main
