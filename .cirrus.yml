@@ -16,8 +16,10 @@ task:
     - pwd
     - cd /tmp && git clone https://github.com/tcnksm/ghr
     - cd ghr && go build
-  clone_script:
+  build_script:
     - git clone https://github.com/listboss/rmate-rust.git rmate
     - ls -la
     - cd rmate
     - cargo run -- --help
+  deploy_script:
+    - .cirrusci/deploy.sh
