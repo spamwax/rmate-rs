@@ -7,7 +7,7 @@ set -ex
 export PATH=$HOME/.cargo/bin:$PATH
 
 main() {
-    export ghr_exe=/tmp/ghr/ghr
+    export ghr_exe=$HOME/ghr/ghr
     local src=$(pwd) stage=$(mktemp -d)
     os_name="$CIRRUS_OS"-$(freebsd-version -u | cut -f 1 -d '-') || os_name=freebsd-12.1
     arch=x86_$(getconf LONG_BIT) || arch=x86_64

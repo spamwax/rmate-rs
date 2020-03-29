@@ -2,8 +2,7 @@ freebsd_instance:
   image_family: freebsd-12-1
 
 task:
-  name: Install ghr
-  alias: step1
+  name: FreeBSD Build
   env:
     GHRELEASER_VERSION: v0.13.0
     BASH_CMD: /usr/local/bin/bash
@@ -13,30 +12,20 @@ task:
     - pwd
     - pkg install -y curl go git bash
     - .cirrusci/install_ghr.sh
-  ghr_folder_cache:
+  ghr_caching_cache:
     folder: ghr
-    fingerprint_script: md5 -q /tmp/ghr/ghr
-
-task:
-  name: Build & Deploy
-  alias: step2
-  depends_on:
-    - step1
-  env:
-    GHRELEASER_VERSION: v0.13.0
-    BASH_CMD: /usr/local/bin/bash
-    HOME: /tmp
-    CIRRUS_CLONE_DEPTH: 1
-    GITHUB_TOKEN: ENCRYPTED[4a8c923e354ae42d67658f757274d597870377fd90a06f5c4a2c2ad7d11083e2748936abd5615791ada71ed05c7ad130]
-  install_deps_script:
+    fingerprint_script: md5 -q ghr/ghr
+  install_rust_script:
     - echo "shell: $SHELL   home:$HOME"
     - pwd
     # - pkg install -y curl go bash
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
     - set PATH=$HOME/.cago/bin:$PATH || true
-  cargo_cache:
-    folder: $HOME/.cargo/registry
-    fingerprint_script: cat Cargo.lock || echo Cargo
+    - echo $PATH
+    - echo $CARGO_HOME
   build_script: .cirrusci/build.sh || true
   deploy_script: .cirrusci/deploy.sh || true
   before_cache_script: rm -rf $HOME/.cargo/registry/index
+  cargo_caching_cache:
+    folder: $HOME/.cargo/registry
+    fingerprint_script: cat Cargo.lock || echo Cargo
