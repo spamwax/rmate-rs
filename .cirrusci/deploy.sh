@@ -7,21 +7,24 @@ set -ex
 export PATH=$HOME/.cargo/bin:$PATH
 
 main() {
+    exoprt ghr_exe=/tmp/ghr/ghr
+    export || true
+    env || true
+    setenv || true
     local src=$(pwd) stage=$(mktemp -d)
-    echo `pwd`
     CIRRUS_SHA1=$(git rev-parse --verify HEAD)
-    tar czvf rmate.tar.gz "$src/target/release/rmate"
+    tar czvf rmate_freebsd-x86_64.tar.gz "target/release/rmate"
     export artifacts=rmate.tar.gz
     echo ${CIRRUS_REPO_OWNER} ${CIRRUS_REPO_NAME} ${CIRRUS_SHA1} ${CIRCLE_TAG} ${artifacts}
-    [ -f /tmp/ghr/ghr ] && ls -l /tmp/ghr/ghr || true
-    # "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRRUS_SHA1} -delete ${CIRRUS_TAG} ${artifacts}
+    [ -f "$ghr" ] && ls -lh "$ghr"
+    "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRRUS_SHA1} -delete ${CIRRUS_TAG} ${artifacts} || true
 }
 
 if [ -n "$CIRRUS_TEST" ]; then
     echo "CIRCLE_TEST is set, exitting"
     exit 1 || true
 fi
-if [ -n "$CIRRUS_TAG" ]; then
+if [ -z "$CIRRUS_TAG" ]; then
     echo "Not a tagged commit, exitting."
     exit 1 || true
 elif [ -z "$GITHUB_TOKEN" ]; then
