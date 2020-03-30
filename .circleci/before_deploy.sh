@@ -46,9 +46,9 @@ create_tar() {
   strip_cmd=strip
 
   if [[ $TARGET == *"aarch64"* ]]; then
-    strip_cmd=aarch64-linux-gnu-strip
+    strip_cmd="/usr/bin/aarch64-linux-gnu-strip"
   elif [[ $TARGET == *"arm"* ]]; then
-    strip_cmd=arm-linux-gnueabi-strip
+    strip_cmd="/usr/bin/arm-linux-gnueabi-strip"
   fi
   "$strip_cmd" target/$TARGET/release/rmate || true
   tar czvf "$artifacts" "target/$TARGET/release/rmate"
