@@ -110,6 +110,39 @@ jobs:
             .circleci/before_deploy.sh
             .circleci/deploy.sh
 
+  runner:
+    docker:
+      - image: hamiid/circleci-rust:latest
+    environment:
+      RUST_BACKTRACE: "1"
+      CIRCLE_OS_NAME: linux
+    steps:
+      - run:
+          name: install debian 
+          command: |
+            sudo apt-get update
+            # sudo apt-get remove --purge binutils-aarch64-linux-gnu
+            # sudo apt-get remove --purge qemu-utils qemu-system-arm qemu-system-common qemu-utils qemu-user-static
+            # sudo apt-get install binutils-aarch64-linux-gnu
+            # sudo apt-get install qemu-utils qemu-system-arm qemu-system-common qemu-utils qemu-user-static
+      - checkout
+      - run:
+          name: Build
+          command: |
+            # cargo update
+            # cargo generate-lockfile
+            cargo build --target aarch64-unknown-linux-gnu
+      - setup_remote_docker
+      - run: sleep 10 && docker pull arm64v8/debian:stretch-slim
+      - run:
+          name: shit
+          command: |
+            cp /usr/bin/qemu-arm-static .
+            cp /usr/bin/qemu-aarch64-static .
+            cp target/aarch64-unknown-linux-gnu/debug/rmate .
+            docker build . -t 'arm64v8rust:testing'
+            docker run --rm 'arm64v8rust:testing'
+
   macosimage:
     parameters:
       release:
@@ -170,117 +203,121 @@ jobs:
                   .circleci/deploy.sh
 
 workflows:
-  linux_i386:
+  version: 2.1
+  run_aarch64:
     jobs:
-      - linux:
-          name: Linux-32bit
-          target: i686-unknown-linux-gnu 
-          image: hamiid/rust-i386
-          build_type: release
-          filters:
-            tags:
-              only: /v?[0-9]+.*/
-            branches:
-              ignore: /.*/
-      - deploy:
-          name: Linux-32bit-deploy
-          target: i686-unknown-linux-gnu
-          requires:
-            - Linux-32bit
-          filters:
-            tags:
-              only: /v?[0-9]+.*/
-            branches:
-              ignore: /.*/
+      - runner
 
-  linux_arm:
-    jobs:
-      - linux:
-          name: armv7-hf-release
-          target: armv7-unknown-linux-gnueabihf
-          build_type: release
-          filters:
-            tags:
-              only: /v?[0-9]+.*/
-            branches:
-              ignore: /.*/
-      - deploy:
-          name: armv7-deploy
-          target: armv7-unknown-linux-gnueabihf
-          requires:
-            - armv7-hf-release
-          filters:
-            tags:
-              only: /v?[0-9]+.*/
-            branches:
-              ignore: /.*/
+  # linux_i386:
+  #   jobs:
+  #     - linux:
+  #         name: Linux-32bit
+  #         target: i686-unknown-linux-gnu 
+  #         image: hamiid/rust-i386
+  #         build_type: release
+  #         filters:
+  #           tags:
+  #             only: /v?[0-9]+.*/
+  #           branches:
+  #             ignore: /.*/
+  #     - deploy:
+  #         name: Linux-32bit-deploy
+  #         target: i686-unknown-linux-gnu
+  #         requires:
+  #           - Linux-32bit
+  #         filters:
+  #           tags:
+  #             only: /v?[0-9]+.*/
+  #           branches:
+  #             ignore: /.*/
 
-  linux_aarch64:
-    jobs:
-      - linux:
-          name: aarch64-release
-          target: aarch64-unknown-linux-gnu
-          build_type: release
-          filters:
-            tags:
-              only: /v?[0-9]+.*/
-            branches:
-              ignore: /.*/
-      - deploy:
-          name: aarch64-deploy
-          target: aarch64-unknown-linux-gnu
-          requires:
-            - aarch64-release
-          filters:
-            tags:
-              only: /v?[0-9]+.*/
-            branches:
-              ignore: /.*/
+  # linux_arm:
+  #   jobs:
+  #     - linux:
+  #         name: armv7-hf-release
+  #         target: armv7-unknown-linux-gnueabihf
+  #         build_type: release
+  #         filters:
+  #           tags:
+  #             only: /v?[0-9]+.*/
+  #           branches:
+  #             ignore: /.*/
+  #     - deploy:
+  #         name: armv7-deploy
+  #         target: armv7-unknown-linux-gnueabihf
+  #         requires:
+  #           - armv7-hf-release
+  #         filters:
+  #           tags:
+  #             only: /v?[0-9]+.*/
+  #           branches:
+  #             ignore: /.*/
+
+  # linux_aarch64:
+  #   jobs:
+  #     - linux:
+  #         name: aarch64-release
+  #         target: aarch64-unknown-linux-gnu
+  #         build_type: release
+  #         filters:
+  #           tags:
+  #             only: /v?[0-9]+.*/
+  #           branches:
+  #             ignore: /.*/
+  #     - deploy:
+  #         name: aarch64-deploy
+  #         target: aarch64-unknown-linux-gnu
+  #         requires:
+  #           - aarch64-release
+  #         filters:
+  #           tags:
+  #             only: /v?[0-9]+.*/
+  #           branches:
+  #             ignore: /.*/
   
 
-  linux_x86_64:
-      jobs:
-        - linux:
-            name: Linux-64bit
-            target: x86_64-unknown-linux-gnu
-            rust: 1.42.0
-            filters:
-              branches:
-                only: /.*/
-              tags:
-                ignore: /v?[0-9]+.*/
-        - tests:
-            name: Linux-64bit-test
-            target: x86_64-unknown-linux-gnu
-            rust: 1.42.0
-            filters:
-              branches:
-                only: [master, develop]
-              tags:
-                ignore: /v?[0-9]+.*/
-            requires:
-              - Linux-64bit
-        - linux:
-            name: Linux-64bit-release
-            target: x86_64-unknown-linux-gnu
-            # target: i686-unknown-linux-gnu
-            rust: 1.42.0
-            build_type: release
-            filters:
-              tags:
-                only: /v?[0-9]+.*/
-              branches:
-                ignore: /.*/
-        - deploy:
-            name: deploy-linux_x86_64
-            target: x86_64-unknown-linux-gnu
-            filters:
-              tags:
-                only: /v?[0-9]+.*/
-              branches:
-                ignore: /.*/
-            requires:
-              - Linux-64bit-release
+  # linux_x86_64:
+  #     jobs:
+  #       - linux:
+  #           name: Linux-64bit
+  #           target: x86_64-unknown-linux-gnu
+  #           rust: 1.42.0
+  #           filters:
+  #             branches:
+  #               only: /.*/
+  #             tags:
+  #               ignore: /v?[0-9]+.*/
+  #       - tests:
+  #           name: Linux-64bit-test
+  #           target: x86_64-unknown-linux-gnu
+  #           rust: 1.42.0
+  #           filters:
+  #             branches:
+  #               only: [master, develop]
+  #             tags:
+  #               ignore: /v?[0-9]+.*/
+  #           requires:
+  #             - Linux-64bit
+  #       - linux:
+  #           name: Linux-64bit-release
+  #           target: x86_64-unknown-linux-gnu
+  #           rust: 1.42.0
+  #           build_type: release
+  #           filters:
+  #             tags:
+  #               only: /v?[0-9]+.*/
+  #             branches:
+  #               ignore: /.*/
+  #       - deploy:
+  #           name: deploy-linux_x86_64
+  #           target: x86_64-unknown-linux-gnu
+  #           filters:
+  #             tags:
+  #               only: /v?[0-9]+.*/
+  #             branches:
+  #               ignore: /.*/
+  #           requires:
+  #             - Linux-64bit-release
 
   # build-n-test-macos:
   #   jobs:
