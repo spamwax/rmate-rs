@@ -20,7 +20,7 @@ main() {
     echo ${CIRRUS_REPO_OWNER} ${CIRRUS_REPO_NAME} ${CIRRUS_SHA1} ${CIRRUS_TAG} ${artifacts}
 
     [ -f "$ghr_exe" ] && ls -lh "$ghr_exe"
-    "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRRUS_REPO_OWNER} -r ${CIRRUS_REPO_NAME} -c ${CIRRUS_SHA1} -delete ${CIRRUS_TAG} ${artifacts} || true
+    "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRRUS_REPO_OWNER} -r ${CIRRUS_REPO_NAME} -c ${CIRRUS_SHA1} -replace ${CIRRUS_TAG} ${artifacts} || true
 }
 
 if [[ -n "$CIRRUS_TEST" || ( "$CIRRUS_BRANCH" == 'master' && -z "$CIRRUS_TAG" ) ]]; then

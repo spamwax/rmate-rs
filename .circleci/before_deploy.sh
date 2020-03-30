@@ -43,7 +43,14 @@ create_tar() {
   echo `pwd`
   ls -la
   artifacts=rmate_"$TARGET".tar.gz
-  strip target/$TARGET/release/rmate || true
+  strip_cmd=strip
+
+  if [[ $TARGET == *"aarch64"* ]]; then
+    strip_cmd=aarch64-linux-gnu-strip
+  elif [[ $TARGET == *"arm"* ]]; then
+    strip_cmd=arm-linux-gnueabi-strip
+  fi
+  "$strip_cmd" target/$TARGET/release/rmate || true
   tar czvf "$artifacts" "target/$TARGET/release/rmate"
   mv "$artifacts" /tmp
 }
