@@ -201,8 +201,10 @@ workflows:
             rust: 1.42.0
             build_type: release
             filters:
+              tags:
+                only: /v?[0-9]+.*/
               branches:
-                only: [master, develop]
+                ignore: /.*/
         - deploy:
             name: deploy-linux_x86_64
             target: x86_64-unknown-linux-gnu

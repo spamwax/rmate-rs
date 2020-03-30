@@ -37,12 +37,11 @@ run_tests() {
 }
 
 # Build only
-if [ -z "$CIRCLE_TEST" ]; then
+if [[ -z "$CIRCLE_TEST" || "$CIRCLE_TEST" == 'false' ]]; then
+    echo "Tests Disabled. Just Building in $BUILD_TYPE mode"
     arg=
     [[ "$BUILD_TYPE" == "release" ]] && arg="--release"
     cargo build $arg --target "$TARGET"
-elif [[ "$CIRCLE_TEST" == "false" ]]; then # Tests disabled
-    echo "Tests Disabled. Finishing the job."
 # Test only
 elif [[ "$CIRCLE_TEST" == "true" ]]; then
     echo "$1"
