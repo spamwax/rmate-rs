@@ -11,25 +11,31 @@ jobs:
       build_type:
         type: string
         default: "debug"
+      image:
+        type: string
+        default: "hamiid/circleci-rust:latest"
     docker:
-      - image: circleci/rust:stretch
+      # - image: circleci/rust:stretch
+      - image: "<< parameters.image >>"
     environment:
-      RUST_BACKTRACE: "1"
-      CIRCLE_OS_NAME: linux
       TARGET: "<< parameters.target >>"
       BUILD_TYPE: "<< parameters.build_type >>"
+      RUST_BACKTRACE: "1"
+      CIRCLE_OS_NAME: linux
+      CIRCLE_TEST: "false"
     steps:
-      - run:
-          name: Install Dependencies
-          command: |
-              sudo sh -c 'echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list'
-              sudo apt-get update
-              sudo apt-get clean
-              sudo rm -r /var/lib/apt/lists/*
-      - run:
-          name: Install Rust "<< parameters.rust >>"
-          command:
-            curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain << parameters.rust >>
+      # - run:
+      #     name: Install Dependencies
+      #     command: |
+      #         # sh -c 'echo "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/backports.list'
+      #         apt-get update
+      #         apt-get clean
+      #         apt-get install curl git bash build-essential make binutils -y
+      #         rm -r /var/lib/apt/lists/*
+      # - run:
+      #     name: Install Rust "<< parameters.rust >>"
+      #     command:
+      #       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain << parameters.rust >>
       - run:
           name: Add Rust Components
           command: |
@@ -53,8 +59,12 @@ jobs:
       rust:
         type: string
         default: 1.42.0
+      image:
+        type: string
+        default: hamiid/circleci-rust:latest
     docker:
-      - image: circleci/rust:stretch
+      # - image: circleci/rust:stretch
+      - image: "<< parameters.image >>"
     environment:
       RUST_BACKTRACE: "1"
       TARGET: "<< parameters.target >>"
@@ -74,17 +84,18 @@ jobs:
       - run:
           name: Run Tests
           command: |
-            cd /tmp/apr/project
-            export APR_EXEC=/tmp/apr/project/target/$TARGET/debug/alfred-pinboard-rs
+            cd /tmp/rmate/project
+            export EXEC=target/$TARGET/debug/rmate
             export working_dir=$(pwd)
-            .circleci/script.sh $APR_EXEC $working_dir
+            .circleci/script.sh $EXEC $working_dir
+
   deploy:
-    description: Deploy to Github from a linux container (not used in any workflows at the moment)
+    description: Deploy to Github from a linux container
     parameters:
       target:
         type: string
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/rust:stretch
     environment:
       TARGET: "<< parameters.target >>"
       CIRCLECI_TEST: "false"
@@ -138,7 +149,7 @@ jobs:
                 name: Running macOS Tests
                 command: |
                     export CIRCLE_TEST=true
-                    export APR_EXEC=./target/$TARGET/debug/alfred-pinboard-rs
+                    export APR_EXEC=./target/$TARGET/debug/rmate
                     export working_dir=$(pwd)
                     .circleci/script.sh $APR_EXEC $working_dir
       - when:
@@ -151,7 +162,7 @@ jobs:
                     export BUILD_TYPE=release
                     .circleci/script.sh
             - run:
-                name: Building Alfred Workflow Bundle
+                name: Building Artifact
                 command: .circleci/before_deploy.sh
             - run:
                 name: Deploying to Github
@@ -163,29 +174,30 @@ jobs:
 workflows:
   linux_x86_64:
       jobs:
-        # - linux:
-        #     name: Linux-64bit
-        #     target: x86_64-unknown-linux-gnu
-        #     rust: 1.42.0
-        #     filters:
-        #       branches:
-        #         only: /.*/
-        #       tags:
-        #         ignore: /v?[0-9]+.*/
-        # - tests:
-        #     name: Linux-64bit-test
-        #     target: x86_64-unknown-linux-gnu
-        #     rust: 1.42.0
-        #     filters:
-        #       branches:
-        #         only: [master, develop]
-        #       tags:
-        #         ignore: /v?[0-9]+.*/
-        #     requires:
-        #       - Linux-64bit
+        - linux:
+            name: Linux-64bit
+            target: x86_64-unknown-linux-gnu
+            rust: 1.42.0
+            filters:
+              branches:
+                only: /.*/
+              tags:
+                ignore: /v?[0-9]+.*/
+        - tests:
+            name: Linux-64bit-test
+            target: x86_64-unknown-linux-gnu
+            rust: 1.42.0
+            filters:
+              branches:
+                only: [master, develop]
+              tags:
+                ignore: /v?[0-9]+.*/
+            requires:
+              - Linux-64bit
         - linux:
             name: Linux-64bit-release
             target: x86_64-unknown-linux-gnu
+            # target: i686-unknown-linux-gnu
             rust: 1.42.0
             build_type: release
             filters:
@@ -194,6 +206,11 @@ workflows:
         - deploy:
             name: deploy-linux_x86_64
             target: x86_64-unknown-linux-gnu
+            filters:
+              tags:
+                only: /v?[0-9]+.*/
+              branches:
+                ignore: /.*/
             requires:
               - Linux-64bit-release
 

@@ -3,9 +3,9 @@
 set -ex
 
 run_tests() {
-    # runner="$1"
+    runner="$1"
     working_dir="$2"
-    runner="cargo run --target "$TARGET" --"
+    # runner="cargo run --target "$TARGET" --"
     export RMATE_HOST=localhost
     export RMATE_PORT=55555
     case "$TARGET" in
