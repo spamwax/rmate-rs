@@ -54,6 +54,7 @@ main() {
     "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace ${CIRCLE_TAG} ${artifacts}
 }
 
+pwd
 
 # if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
   # source /root/.cargo/env

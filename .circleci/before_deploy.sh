@@ -103,7 +103,7 @@ build_mac_artifact() {
   # source /root/.cargo/env
   # source /home/circleci/.cargo/env
 # fi
-
+pwd
 if [ -z "$CIRCLE_TAG" ]; then
     echo "Not a tagged commit. Exitting"
     exit 1

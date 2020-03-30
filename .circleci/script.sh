@@ -39,6 +39,7 @@ run_tests() {
 #   source /home/circleci/.cargo/env
 # fi
 
+pwd
 cargo generate-lockfile
 
 # Build only
