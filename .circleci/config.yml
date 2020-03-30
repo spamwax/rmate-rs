@@ -39,7 +39,7 @@ jobs:
       - run:
           name: Add Rust Components
           command: |
-            source /root/.cargo/env || true
+            source /home/circleci/.cargo/env || true
             rustup component add clippy rustfmt
             rustup target add $TARGET
             rustc --version; cargo --version; rustup --version
@@ -49,7 +49,7 @@ jobs:
           command: |
             .circleci/script.sh
       - persist_to_workspace:
-          root: $HOME/circleci
+          root: /home/circleci
           paths:
             - project
   tests:

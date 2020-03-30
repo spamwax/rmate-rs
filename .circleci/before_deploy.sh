@@ -100,7 +100,8 @@ build_mac_artifact() {
 }
 
 if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
-  source /root/.cargo/env
+  # source /root/.cargo/env
+  source /home/circleci/.cargo/env
 fi
 
 if [ -z "$CIRCLE_TAG" ]; then

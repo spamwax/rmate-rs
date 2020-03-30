@@ -36,7 +36,7 @@ run_tests() {
 }
 
 if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
-  source /root/.cargo/env
+  source /home/circleci/.cargo/env
 fi
 
 cargo generate-lockfile
