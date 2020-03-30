@@ -40,6 +40,8 @@ main() {
 }
 
 create_tar() {
+  echo `pwd`
+  ls -la
   artifacts=rmate_"$TARGET".tar.gz
   strip target/$TARGET/release/rmate || true
   tar czvf "$artifacts" "target/$TARGET/release/rmate"
@@ -47,11 +49,12 @@ create_tar() {
 }
 
 build_mac_artifact() {
+    echo `pwd`
+    ls -la
     artifacts=rmate_"$TARGET".zip
     strip target/$TARGET/release/rmate || true
     zip "$artifacts" target/$TARGET/release/rmate
     mv "$artifacts" /tmp
-    return
     # src=$1
     # stage=$2
     # test -f Cargo.lock || cargo generate-lockfile

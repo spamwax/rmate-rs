@@ -26,6 +26,7 @@ main() {
         linux)
             ghr_link=https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_linux_amd64.tar.gz
             ghr_archive=ghr_"$GHRELEASER_VERSION"_linux_amd64
+            curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/$ghr_archive.tar.gz
 
             tar xzvf "$ghr_archive".tar.gz
             export artifacts=/tmp/rmate_$TARGET.tar.gz
@@ -33,6 +34,7 @@ main() {
         macos)
             ghr_link=https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_darwin_amd64.zip
             ghr_archive=ghr_"$GHRELEASER_VERSION"_darwin_amd64
+            curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/$ghr_archive.zip
 
             unzip "$ghr_archive".zip
             export artifacts=/tmp/rmate_$TARGET.zip
