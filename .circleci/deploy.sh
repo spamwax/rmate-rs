@@ -55,10 +55,10 @@ main() {
 }
 
 
-if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
+# if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
   # source /root/.cargo/env
-  source /home/circleci/.cargo/env
-fi
+  # source /home/circleci/.cargo/env
+# fi
 
 if [ -n "$CIRCLE_TEST" ]; then
     echo "CIRCLE_TEST is set, exitting"
