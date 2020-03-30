@@ -46,6 +46,7 @@ main() {
     ghr_exe=$(pwd)/$ghr_archive/ghr
     cd "$prev_dir"
     [ -f "$artifacts" ] || true && echo "WARNING!!!!!!!!!=========================================="
+    ls -l "$artifacts"
     # export CIRCLE_PROJECT_USERNAME=listboss
     # export CIRCLE_PROJECT_REPONAME=rmate-rust
     # export CIRCLE_TAG=v1.0
