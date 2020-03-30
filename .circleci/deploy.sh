@@ -1,16 +1,18 @@
 #!/bin/bash
-# This script takes care of building your crate and packaging it for release
+# This script takes care of deploying your artifacts to github
 set -ex
 
 deploy() {
     prev_dir=$(pwd)
     cd /tmp
-    curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_darwin_amd64.zip
-    unzip ghr_"$GHRELEASER_VERSION"_darwin_amd64.zip
-    ghr_exe=$(pwd)/ghr_"$GHRELEASER_VERSION"_darwin_amd64/ghr
+    ghr_v0.13.0_linux_amd64.tar.gz
+    curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_linux_amd64.tar.gz
+    tar xzvf ghr_"$GHRELEASER_VERSION"_linux_amd64.tar.gz
+    # unzip ghr_"$GHRELEASER_VERSION"_darwin_amd64.zip
+    ghr_exe=$(pwd)/ghr_"$GHRELEASER_VERSION"_linux_amd64/ghr
     cd "$prev_dir"
-    [ -f ./target/alfred-pinboard-rust-${CIRCLE_TAG}.alfredworkflow ]
-    export artifacts=./target/alfred-pinboard-rust-${CIRCLE_TAG}.alfredworkflow
+    export artifacts=/tmp/rmate_$TARGET.tar.gz
+    [ -f "$artifacts" ] || true
     echo ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME} ${CIRCLE_SHA1} ${CIRCLE_TAG} ${artifacts}
     "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ${artifacts}
 }

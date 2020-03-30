@@ -24,14 +24,20 @@ main() {
         x86_64-apple-darwin)
             build_alfred_bundle "$src" "$stage"
             ;;
-        # i686-apple-darwin)
-            # build_alfred_bundle "$src" "$stage"
-            # ;;
+        i686-unknown-linux-gnu)
+            create_tar
+            ;;
         *)
             return
             ;;
     esac
 
+}
+
+create_tar() {
+  artifacts=rmate_"$TARGET".tar.gz
+  tar czvf "$artifacts" "target/$TARGET/release/rmate"
+  mv "$artifacts" /tmp
 }
 
 build_alfred_bundle() {

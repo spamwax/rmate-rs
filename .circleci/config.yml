@@ -8,12 +8,16 @@ jobs:
       rust:
         type: string
         default: 1.42.0
+      build_type:
+        type: string
+        default: "debug"
     docker:
       - image: circleci/rust:stretch
     environment:
       RUST_BACKTRACE: "1"
       CIRCLE_OS_NAME: linux
       TARGET: "<< parameters.target >>"
+      BUILD_TYPE: "<< parameters.build_type >>"
     steps:
       - run:
           name: Install Dependencies
@@ -30,6 +34,7 @@ jobs:
           name: Add Rust Components
           command: |
             rustup component add clippy rustfmt
+            rustup target add $TARGET
             rustc --version; cargo --version; rustup --version
       - checkout
       - run:
@@ -37,11 +42,6 @@ jobs:
           command: |
             cargo generate-lockfile
             .circleci/script.sh
-      - run:
-          name: Run clippy & rustfmt
-          command: |
-            cargo fmt
-            cargo clippy --all-targets --all-features -- -D warnings
       - persist_to_workspace:
           root: /home/circleci
           paths:
@@ -80,25 +80,26 @@ jobs:
             .circleci/script.sh $APR_EXEC $working_dir
   deploy:
     description: Deploy to Github from a linux container (not used in any workflows at the moment)
+    parameters:
+      target:
+        type: string
     docker:
       - image: circleci/golang:1.13
     environment:
-      TARGET: x86_64-unknown-linux-gnu
+      TARGET: "<< parameters.target >>"
       CIRCLECI_TEST: "false"
+      CIRCLE_OS_NAME: linux
     steps:
       - attach_workspace:
-          at: /tmp
+          at: /tmp/rmate
       - checkout
       - run:
+          name: Deploy using ghr
           command: |
-            go get github.com/tcnksm/ghr
+            cd /tmp/rmate/project
             export VERSION=${CIRCLE_TAG}
-            [ -n ${GITHUB_TOKEN} ] && echo "I have it!"
-            [ -z ${GITHUB_TOKEN} ] && echo "I DO NOT have it!"
-            [ -f /tmp/target/alfred-pinboard-rust-${CIRCLE_TAG}.alfredworkflow ]
-            export artifacts=/tmp/target/alfred-pinboard-rust-${CIRCLE_TAG}.alfredworkflow
-            echo ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME} ${CIRCLE_SHA1} ${VERSION} ${artifacts}
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ${artifacts}
+            .circleci/before_deploy.sh
+            .circleci/deploy.sh
 
   macosimage:
     parameters:
@@ -162,26 +163,39 @@ jobs:
 workflows:
   linux_x86_64:
       jobs:
+        # - linux:
+        #     name: Linux-64bit
+        #     target: x86_64-unknown-linux-gnu
+        #     rust: 1.42.0
+        #     filters:
+        #       branches:
+        #         only: /.*/
+        #       tags:
+        #         ignore: /v?[0-9]+.*/
+        # - tests:
+        #     name: Linux-64bit-test
+        #     target: x86_64-unknown-linux-gnu
+        #     rust: 1.42.0
+        #     filters:
+        #       branches:
+        #         only: [master, develop]
+        #       tags:
+        #         ignore: /v?[0-9]+.*/
+        #     requires:
+        #       - Linux-64bit
         - linux:
-            name: Linux-64bit
+            name: Linux-64bit-release
             target: x86_64-unknown-linux-gnu
             rust: 1.42.0
-            filters:
-              branches:
-                only: /.*/
-              tags:
-                ignore: /v?[0-9]+.*/
-        - tests:
-            name: Linux-64bit-test
-            target: x86_64-unknown-linux-gnu
-            rust: 1.42.0
+            build_type: release
             filters:
               branches:
                 only: [master, develop]
-              tags:
-                ignore: /v?[0-9]+.*/
+        - deploy:
+            name: deploy-linux_x86_64
+            target: x86_64-unknown-linux-gnu
             requires:
-              - Linux-64bit
+              - Linux-64bit-release
 
   # build-n-test-macos:
   #   jobs:
@@ -191,17 +205,19 @@ workflows:
   #         filters:
   #           branches:
   #             only: [master, develop]
-  deploy-to-github:
-    jobs:
-      - macosimage:
-          name: macOS-64bit-release
-          rust: 1.42.0
-          release: true
-          filters:
-            tags:
-              only: /v?[0-9]+.*/
-            branches:
-              ignore: /.*/
+
+  # deploy-to-github:
+  #   jobs:
+  #     - macosimage:
+  #         name: macOS-64bit-release
+  #         rust: 1.42.0
+  #         release: true
+  #         filters:
+  #           tags:
+  #             only: /v?[0-9]+.*/
+  #           branches:
+  #             ignore: /.*/
+
       # - deploy:
       #     name: Deploy to Github
       #     release: true
