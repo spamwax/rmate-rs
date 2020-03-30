@@ -33,7 +33,6 @@ run_tests() {
             return
             ;;
     esac
-
 }
 
 # Build only
@@ -46,4 +45,6 @@ if [[ -z "$CIRCLE_TEST" || "$CIRCLE_TEST" == 'false' ]]; then
 elif [[ "$CIRCLE_TEST" == "true" ]]; then
     echo "$1"
     run_tests "$1" "$2"
+else 
+    echo "CIRCLE_TEST env. variable has to be either false or true: $CIRCLE_TEST"
 fi

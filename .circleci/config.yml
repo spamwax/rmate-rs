@@ -74,17 +74,18 @@ jobs:
     steps:
       # - checkout
       - attach_workspace:
-         at: /tmp/apr
+         at: /tmp/rmate
       - run:
           name: Attched?
           command: |
             echo $(pwd)
-            ls /tmp/apr/*
-            ls /tmp/apr/project || true
+            ls /tmp/rmate/*
+            ls /tmp/rmate/project || true
       - run:
           name: Run Tests
           command: |
             cd /tmp/rmate/project
+            ls -l --color target/$TARGET/debueg/* || true
             export EXEC=target/$TARGET/debug/rmate
             export working_dir=$(pwd)
             .circleci/script.sh $EXEC $working_dir
@@ -103,7 +104,6 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/rmate
-      - checkout
       - run:
           name: Deploy using ghr
           command: |
