@@ -215,7 +215,7 @@ workflows:
             branches:
               ignore: /.*/
 
-  linux_arm:
+  linux_aarch64:
     jobs:
       - linux:
           name: aarch64-release
