@@ -51,7 +51,7 @@ main() {
     # export CIRCLE_PROJECT_REPONAME=rmate-rust
     # export CIRCLE_TAG=v1.0
     echo ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME} ${CIRCLE_SHA1} ${CIRCLE_TAG} ${artifacts}
-    "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ${artifacts}
+    "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace ${CIRCLE_TAG} ${artifacts}
 }
 
 if [ -n "$CIRCLE_TEST" ]; then
