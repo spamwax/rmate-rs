@@ -170,6 +170,29 @@ jobs:
                   .circleci/deploy.sh
 
 workflows:
+  linux_i386:
+    jobs:
+      - linux:
+          name: Linux-32bit
+          target: i686-unknown-linux-gnu 
+          image: hamiid/i386
+          build_type: release
+          filters:
+            tags:
+              only: /v?[0-9]+.*/
+            branches:
+              ignore: /.*/
+      - deploy:
+          name: Linux-32bit-deploy
+          target: i686-unknown-linux-gnu
+          requires:
+            - Linux-32bit
+          filters:
+            tags:
+              only: /v?[0-9]+.*/
+            branches:
+              ignore: /.*/
+
   linux_arm:
     jobs:
       - linux:
