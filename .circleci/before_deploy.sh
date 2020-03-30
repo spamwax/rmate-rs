@@ -99,6 +99,10 @@ build_mac_artifact() {
 
 }
 
+if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
+  source /root/.cargo/env
+fi
+
 if [ -z "$CIRCLE_TAG" ]; then
     echo "Not a tagged commit. Exitting"
     exit 1

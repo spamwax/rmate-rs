@@ -54,6 +54,11 @@ main() {
     "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace ${CIRCLE_TAG} ${artifacts}
 }
 
+
+if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
+  source /root/.cargo/env
+fi
+
 if [ -n "$CIRCLE_TEST" ]; then
     echo "CIRCLE_TEST is set, exitting"
 fi

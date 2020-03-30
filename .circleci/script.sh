@@ -35,6 +35,12 @@ run_tests() {
     esac
 }
 
+if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
+  source /root/.cargo/env
+fi
+
+cargo generate-lockfile
+
 # Build only
 if [[ -z "$CIRCLE_TEST" || "$CIRCLE_TEST" == 'false' ]]; then
     echo "Tests Disabled. Just Building in $BUILD_TYPE mode"
