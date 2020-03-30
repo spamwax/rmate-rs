@@ -35,9 +35,9 @@ run_tests() {
     esac
 }
 
-if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
-  source /home/circleci/.cargo/env
-fi
+# if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
+#   source /home/circleci/.cargo/env
+# fi
 
 cargo generate-lockfile
 

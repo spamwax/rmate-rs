@@ -175,7 +175,7 @@ workflows:
       - linux:
           name: Linux-32bit
           target: i686-unknown-linux-gnu 
-          image: hamiid/i386
+          image: hamiid/rust-i386
           build_type: release
           # filters:
           #   tags:
