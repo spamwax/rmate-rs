@@ -78,14 +78,11 @@ jobs:
       - run:
           name: Attched?
           command: |
-            echo $(pwd)
-            ls /tmp/rmate/*
-            ls /tmp/rmate/project || true
+            ls /tmp/rmate/project
       - run:
           name: Run Tests
           command: |
             cd /tmp/rmate/project
-            ls -l --color target/$TARGET/debueg/* || true
             export EXEC=target/$TARGET/debug/rmate
             export working_dir=$(pwd)
             .circleci/script.sh $EXEC $working_dir
@@ -172,6 +169,29 @@ jobs:
                   .circleci/deploy.sh
 
 workflows:
+  linux_arm:
+    jobs:
+      - linux:
+          name: armv7-hf-release
+          target: armv7-unknown-linux-gnueabihf
+          build_type: release
+          filters:
+            tags:
+              only: /v?[0-9]+.*/
+            branches:
+              ignore: /.*/
+      - deploy:
+          name: armv7-deploy
+          target: armv7-unknown-linux-gnueabihf
+          requires:
+            - armv7-hf-release
+          filters:
+            tags:
+              only: /v?[0-9]+.*/
+            branches:
+              ignore: /.*/
+
+  
   linux_x86_64:
       jobs:
         - linux:
