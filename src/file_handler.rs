@@ -25,6 +25,18 @@ pub(crate) fn write_to_disk(
         .to_string();
     trace!("  token: >{}<", token);
     myline.clear();
+    let read_only = !opened_buffers.get(&token).unwrap().canwrite;
+    if read_only {
+        warn!(
+            "File is read-only, won't be able to save anything! ({})",
+            opened_buffers
+                .get(&token)
+                .unwrap()
+                .canon_path
+                .as_path()
+                .to_string_lossy()
+        );
+    }
 
     let t1 = Instant::now();
     let mut total_written = 0usize;
@@ -62,16 +74,18 @@ pub(crate) fn write_to_disk(
             loop {
                 let n = chunk_reader.read(&mut buffer)?;
                 if n == 0 {
-                    trace!("  n = {}", n);
                     total_written += total;
                     trace!("  total_written = {}", total_written);
                     buf_writer.flush()?;
                     break;
                 }
-                buf_writer.write_all(&buffer[..n])?;
+
+                if !read_only {
+                    buf_writer.write_all(&buffer[..n])?;
+                }
                 total += n;
                 trace!(
-                    "   - written so far: {}/{}-byte (chunk: {}) to temp file",
+                    "   - transferred so far: {}/{}-byte (chunk: {})",
                     total,
                     data_size,
                     n
@@ -115,12 +129,12 @@ pub(crate) fn write_to_disk(
     let t2 = Instant::now();
     let elapsed = t2 - t1;
     debug!(
-        " * time spent saving to temp file: {} micros ({} chunks of save)",
+        " * time spent reading/writing data: {} micros ({} chunks of save)",
         elapsed.as_micros(),
         no_data_chunks
     );
 
-    debug!("Bytes written to temp file: {}", total_written);
+    debug!("Bytes transferred: {}", total_written);
     // Open the file we are supposed to actuallly save to, and copy
     // content of temp. file to it. ensure we only write number of bytes that
     // Sublime Text has sent us.
@@ -311,6 +325,12 @@ pub(crate) fn get_requested_buffers(
             ));
         }
 
+        let mut disp_name = std::ffi::OsString::with_capacity(128);
+        disp_name.push(gethostname::gethostname());
+        debug!("Hostname: {:?}", disp_name);
+        disp_name.push(":");
+        disp_name.push(file_name_string);
+
         let filesize = md.len();
         let rand_temp_file = tempfile::tempfile().map_err(|e| e.to_string())?;
 
@@ -322,7 +342,8 @@ pub(crate) fn get_requested_buffers(
             hashed_fn.to_string(),
             settings::OpenedBuffer {
                 canon_path: filename_canon,
-                display_name: file_name_string.clone(),
+                // display_name: file_name_string.clone(),
+                display_name: disp_name,
                 line: line,
                 filetype: filetype,
                 canwrite: canwrite,

@@ -57,15 +57,14 @@ pub(crate) fn close_buffer(
 
 pub(crate) fn open_file_in_remote(
     socket: &socket2::Socket,
-    buffers: HashMap<String, settings::OpenedBuffer>,
-) -> Result<HashMap<String, settings::OpenedBuffer>, String> {
+    buffers: &HashMap<String, settings::OpenedBuffer>,
+) -> Result<(), String> {
+    // ) -> Result<HashMap<String, settings::OpenedBuffer>, String> {
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
     trace!("Socket recv buffer: {}", bsize);
     let bsize = socket.send_buffer_size().map_err(|e| e.to_string())? * 2;
     trace!("Socket send buffer: {}", bsize);
 
-    let host_name = gethostname::gethostname();
-    debug!("Hostname: {:?}", host_name);
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, socket);
         for (token, opened_buffer) in buffers.iter() {
@@ -77,13 +76,13 @@ pub(crate) fn open_file_in_remote(
             let mut total = 0usize;
             let header = format!(
                 concat!(
-                    "open\ndisplay-name: {}:{}\n",
+                    "open\ndisplay-name: {}\n",
                     "real-path: {}\n",
                     "selection: {}\n",
                     "data-on-save: yes\nre-activate: yes\n",
                     "token: {}\n",
                 ),
-                host_name.to_string_lossy(),
+                // host_name.to_string_lossy(),
                 opened_buffer.display_name.to_string_lossy(),
                 opened_buffer.canon_path.to_string_lossy(),
                 opened_buffer.line,
@@ -136,5 +135,6 @@ pub(crate) fn open_file_in_remote(
         "Connected to remote app: {}",
         String::from_utf8_lossy(&b[0..n]).trim()
     );
-    Ok(buffers)
+    // Ok(buffers)
+    Ok(())
 }

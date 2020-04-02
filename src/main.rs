@@ -6,7 +6,6 @@ use std::io::{BufRead, BufReader, Error, ErrorKind};
 
 // TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
 // TODO: Can we convert the fork() error number to a proper io::Error? <18-03-20, hamid> //
-// TODO: implement host=auto from SSH_CONNECTIONS <20-03-20, hamid> //
 
 mod file_handler;
 mod remote_editor;
@@ -41,14 +40,27 @@ fn main() -> Result<(), String> {
     settings.host.get_or_insert(disk_settings.0);
     settings.port.get_or_insert(disk_settings.1);
 
+    // if --host auto is set in cmd line arguments, we try to find the host address from
+    // SSH_CONNECTION
+    if settings.host.as_ref().unwrap() == "auto" {
+        trace!("Finding host automatically from SSH_CONNECTION");
+        let auto_host = env::var("SSH_CONNECTION").map_or("localhost".to_string(), |conn| {
+            // iterator returned by split() always returns at least one item so unwrap() is safe
+            conn.split(' ').take(1).next().unwrap().to_string()
+        });
+        trace!("  from SSH_CONNECTION: {}", auto_host);
+        settings.host.as_mut().map(|host| *host = auto_host);
+    }
+
     trace!("rmate settings: {:#?}", settings);
 
     // Check & connect to socket
     let socket = remote_editor::connect_to_editor(&settings).map_err(|e| e.to_string())?;
-    // Populate internal data about files in OpenedBuffer structure
+    // Populate internal data about requested files in OpenedBuffer structure
     let buffers = file_handler::get_requested_buffers(&settings)?;
     // Send the files to remote editor
-    let buffers = remote_editor::open_file_in_remote(&socket, buffers)?;
+    // let buffers = remote_editor::open_file_in_remote(&socket, buffers)?;
+    remote_editor::open_file_in_remote(&socket, &buffers)?;
 
     // If needed, fork so we yield the control back to terminal
     if !settings.wait && run_fork()? {

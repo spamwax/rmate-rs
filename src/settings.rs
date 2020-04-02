@@ -16,12 +16,12 @@ pub(crate) const RMATE_PORT: u16 = 52698;
 #[derive(Debug, StructOpt)]
 #[structopt(
     name = "rmate",
-    author = "h@mid.fyi",
+    author = " ",
     about = "rmate ♥ Rust (TextMate & Sublime Text)",
     settings(&[AppSettings::ColoredHelp])
 )]
 pub(crate) struct Settings {
-    /// Connect to HOST. Use 'auto' to detect the host from SSH
+    /// Connect to HOST. Use 'auto' to detect the host from SSH.
     /// Defalts to localhost
     #[structopt(short = "H", long = "--host", env = "RMATE_HOST", name = "HOST")]
     pub host: Option<String>,
