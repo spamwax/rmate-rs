@@ -161,9 +161,9 @@ jobs:
             file ./rmate || echo
             docker build -f Dockerfile-<< parameters.target >> -t 'arm_rust:testing' .
             echo "\nRunning rmate binary for << parameters.target >>\n"
-            docker run --rm 'arm_rust:testing' 2>&1 > output.log
+            docker run --rm 'arm_rust:testing' 2>output.log || echo
             cat output.log
-            grep "Error: \"Connection refused (os error" ./output.log
+            grep "Error: \"Connection refused (os error" ./output.log || echo
             echo $?
 
   macosimage:
