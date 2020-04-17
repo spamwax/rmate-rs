@@ -149,8 +149,10 @@ jobs:
             cp /usr/bin/qemu-arm-static .
             cp /usr/bin/qemu-aarch64-static .
             cp target/$TARGET/debug/rmate .
-            echo $QEMU_STATIC_RUNNER
+            echo  "<< parameters.qemu_runner >>"
             export RUNNER=$QEMU_STATIC_RUNNER
+            ls -l
+            pwd
             docker build . -f Dockerfle-$TARGET -t 'arm64v8rust:testing'
             docker run --rm 'arm64v8rust:testing'
 
