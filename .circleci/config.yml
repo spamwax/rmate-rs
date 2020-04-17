@@ -153,8 +153,8 @@ jobs:
             export RUNNER=$QEMU_STATIC_RUNNER
             ls -l
             pwd
-            echo Dockerfle-$TARGET
-            docker build -f Dockerfle -t 'arm64v8rust:testing' .
+            echo Dockerfile-$TARGET
+            docker build -f Dockerfile-$TARGET -t 'arm64v8rust:testing' .
             docker run --rm 'arm64v8rust:testing'
 
   macosimage:
