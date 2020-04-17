@@ -12,4 +12,4 @@ COPY rmate /usr/bin/
 
 # RUN file /usr/bin/rmate
 # CMD ["${RUNNER}", "/usr/bin/rmate", "--help", "||", "echo"]
-RUN ${RUNNER} "/usr/bin/rmate" "--help" || "echo"
+RUN $RUNNER "/usr/bin/rmate" "--help" || "echo"
