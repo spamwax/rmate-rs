@@ -142,7 +142,15 @@ jobs:
             rustup target add "<< parameters.target >>"
             cargo build --target $TARGET
       - setup_remote_docker
-      - run: sleep 10 && docker pull arm64v8/debian:stretch-slim
+      - run:
+          name: Pull correct arm/debian images
+          command: |
+            sleep 10
+            if [ $TARGET = "aarch64-unknown-linux-gnu" ]; then
+                docker pull arm64v8/debian:stretch-slim
+            else
+                docker pull arm32v7/debian:stretch-slim
+            fi
       - run:
           name: Run under qemu
           command: |
@@ -153,9 +161,9 @@ jobs:
             export RUNNER=$QEMU_STATIC_RUNNER
             ls -l
             pwd
-            echo Dockerfile-$TARGET
-            docker build -f Dockerfile-$TARGET -t 'arm64v8rust:testing' .
-            docker run --rm 'arm64v8rust:testing'
+            echo Dockerfile-<< parameters.target >>
+            docker build -f Dockerfile-<< parameters.target >> -t 'arm_rust:testing' .
+            docker run --rm 'arm_rust:testing'
 
   macosimage:
     parameters:
