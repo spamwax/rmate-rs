@@ -4,9 +4,6 @@ use std::collections::HashMap;
 use std::env;
 use std::io::{BufRead, BufReader, Error, ErrorKind};
 
-// TODO: use 'group' feature of clap/structopt to parse: -m name1 namefile1 file1 file2 -m name2 namefile2 file3 <15-03-20, hamid> //
-// TODO: Can we convert the fork() error number to a proper io::Error? <18-03-20, hamid> //
-
 mod file_handler;
 mod remote_editor;
 mod settings;
@@ -132,7 +129,7 @@ fn handle_remote(
                     trace!("<-- Recvd empty line from editor");
                     continue;
                 } else {
-                    warn!("***===*** Unrecognized shit: {:?}", myline.trim());
+                    error!("***===*** Unrecognized shit: {:?}", myline.trim());
                     return Err(Error::new(ErrorKind::Other, "unrecognized shit"));
                 }
             }
@@ -141,10 +138,3 @@ fn handle_remote(
     trace!("Cumulative total bytes saved: {}", total);
     Ok(())
 }
-
-// Code for abandoned crate 'hostname'
-// let host_name = if let Ok(hostname) = hostname::get() {
-//     hostname
-// } else {
-//     std::ffi::OsString::from("rmate_rust_no_HOST_env_variable")
-// };
