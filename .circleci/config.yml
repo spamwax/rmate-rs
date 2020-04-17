@@ -125,20 +125,13 @@ jobs:
         type: string
     steps:
       - run:
-          name: install debian
+          name: update apt-get
           command: |
             sudo apt-get update
-            # sudo apt-get remove --purge binutils-aarch64-linux-gnu
-            # sudo apt-get remove --purge qemu-utils qemu-system-arm qemu-system-common qemu-utils qemu-user-static
-            # sudo apt-get install binutils-aarch64-linux-gnu
-            # sudo apt-get install qemu-utils qemu-system-arm qemu-system-common qemu-utils qemu-user-static
       - checkout
       - run:
           name: Build
           command: |
-            # cargo update
-            # cargo generate-lockfile
-            # cargo build --target aarch64-unknown-linux-gnu
             rustup target add "<< parameters.target >>"
             cargo build --target $TARGET
       - setup_remote_docker
@@ -159,10 +152,9 @@ jobs:
             cp target/$TARGET/debug/rmate .
             file ./rmate
             docker build -f Dockerfile-<< parameters.target >> -t 'arm_rust:testing' .
-            echo "Running rmate binary for << parameters.target >>"
+            echo && echo "Running rmate binary for << parameters.target >>"
             docker run --rm 'arm_rust:testing' 2>output.log || echo
-            # cat output.log
-            grep "Error: \"Connection refused (os error" ./output.log || echo "code is " $?
+            grep "Error: \"Connection refused (os error" ./output.log
             echo && cat output.log
 
   macosimage:
