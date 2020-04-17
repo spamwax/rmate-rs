@@ -259,6 +259,7 @@ workflows:
             branches:
               ignore: /.*/
       - arm_runner:
+          name: armv7-runner
           target: armv7-unknown-linux-gnueabihf
           qemu_runner: qemu-arm-static
           filters:
@@ -289,6 +290,7 @@ workflows:
             branches:
               ignore: /.*/
       - arm_runner:
+          name: aarch64-runner
           target: aarch64-unknown-linux-gnu
           qemu_runner: qemu-aarch64-static
           filters:

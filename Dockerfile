@@ -11,4 +11,5 @@ COPY rmate /usr/bin/
 # RUN export QEMU_LD_PREFIX=/usr/aarch64-linux-gnu
 
 # RUN file /usr/bin/rmate
-CMD ["${RUNNER}", "/usr/bin/rmate", "--help", "||", "echo"]
+# CMD ["${RUNNER}", "/usr/bin/rmate", "--help", "||", "echo"]
+RUN ${RUNNER} "/usr/bin/rmate" "--help" || "echo"
