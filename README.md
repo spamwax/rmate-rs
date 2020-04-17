@@ -2,3 +2,5 @@
 # rmate ♥ Rust
 
 fast, reliable implementation of **rmate** in Rust.
+
+Pre-complied binaries for multiple platforms are available in [Releases page](https://github.com/listboss/rmate-rust/releases).

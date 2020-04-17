@@ -116,6 +116,13 @@ jobs:
     environment:
       RUST_BACKTRACE: "1"
       CIRCLE_OS_NAME: linux
+      TARGET: "<< parameters.target >>"
+      QEMU_STATIC_RUNNER: "<< parameters.qemu_runner >>"
+    parameters:
+      target:
+        type: string
+      qemu_runner:
+        type: string
     steps:
       - run:
           name: install debian
@@ -131,7 +138,9 @@ jobs:
           command: |
             # cargo update
             # cargo generate-lockfile
-            cargo build --target aarch64-unknown-linux-gnu
+            # cargo build --target aarch64-unknown-linux-gnu
+            rustup target add "<< parameters.target >>"
+            cargo build --target $TARGET
       - setup_remote_docker
       - run: sleep 10 && docker pull arm64v8/debian:stretch-slim
       - run:
@@ -139,8 +148,8 @@ jobs:
           command: |
             cp /usr/bin/qemu-arm-static .
             cp /usr/bin/qemu-aarch64-static .
-            cp target/aarch64-unknown-linux-gnu/debug/rmate .
-            docker build . -t 'arm64v8rust:testing'
+            cp target/$TARGET/debug/rmate .
+            docker build . -e RUNNER=$QEMU_STATIC_RUNNER -t 'arm64v8rust:testing'
             docker run --rm 'arm64v8rust:testing'
 
   macosimage:
@@ -160,7 +169,7 @@ jobs:
       GHRELEASER_VERSION: v0.13.0
     steps:
       - run:
-          name: Install Rust
+          name: "Install Rust"
           command: |
             sudo mkdir /opt
             curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain << parameters.rust >>
@@ -249,6 +258,14 @@ workflows:
               only: /v?[0-9]+.*/
             branches:
               ignore: /.*/
+      - arm_runner:
+          target: armv7-unknown-linux-gnueabihf
+          qemu_runner: qemu-arm-static
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              ignore: /v?[0-9]+.*/
 
   linux_aarch64:
     jobs:
@@ -272,6 +289,8 @@ workflows:
             branches:
               ignore: /.*/
       - arm_runner:
+          target: aarch64-unknown-linux-gnu
+          qemu_runner: qemu-aarch64-static
           filters:
             branches:
               only: /.*/
