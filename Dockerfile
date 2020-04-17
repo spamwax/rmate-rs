@@ -1,6 +1,6 @@
 FROM arm64v8/debian:stretch-slim
 
-ENV RUNNER
+ARG RUNNER
 SHELL ["/bin/bash", "-c"]
 # RUN sudo apt-get update;\
 #     sudo apt-get install file
