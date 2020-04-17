@@ -157,7 +157,8 @@ jobs:
             cp /usr/bin/qemu-arm-static .
             cp /usr/bin/qemu-aarch64-static .
             cp target/$TARGET/debug/rmate .
-            ldd rmate
+            ldd ./rmate || echo
+            file ./rmate || echo
             docker build -f Dockerfile-<< parameters.target >> -t 'arm_rust:testing' .
             echo "\nRunning rmate binary for << parameters.target >>\n"
             docker run --rm 'arm_rust:testing'
