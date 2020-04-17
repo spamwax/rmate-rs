@@ -10,29 +10,31 @@ run_tests() {
     export RMATE_PORT=55555
     case "$TARGET" in
         x86_64-apple-darwin)
-            $runner --help
+            $runner -vvv -w Cargo.toml 2>output.log
             ;;
         x86_64-unknown-linux-gnu)
-            $runner --help
+            $runner -vvv -w Cargo.toml 2>output.log
             ;;
         i686-unknown-linux-gnu)
-            $runner --help
+            $runner -vvv -w Cargo.toml 2>output.log
             ;;
         i686-apple-darwin)
-            $runner --help
+            $runner -vvv -w Cargo.toml 2>output.log
             ;;
         x86_64-unknown-freebsd)
-            $runner --help
+            $runner -vvv -w Cargo.toml 2>output.log
             # $runner config --authorization hamid:12345
             # $runner config -d
             ;;
         armv7-linux-androideabi)
-            $runner --help
+            $runner -vvv -w Cargo.toml 2>output.log
             ;;
         *)
             return
             ;;
     esac
+    grep "Error: \"Connection refused (os error" ./output.log
+    echo && cat output.log
 }
 
 # if [[ "$TARGET" == "i686-unknown-linux-gnu" ]]; then
@@ -52,6 +54,6 @@ if [[ -z "$CIRCLE_TEST" || "$CIRCLE_TEST" == 'false' ]]; then
 elif [[ "$CIRCLE_TEST" == "true" ]]; then
     echo "$1"
     run_tests "$1" "$2"
-else 
+else
     echo "CIRCLE_TEST env. variable has to be either false or true: $CIRCLE_TEST"
 fi
