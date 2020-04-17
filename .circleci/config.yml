@@ -159,10 +159,11 @@ jobs:
             cp target/$TARGET/debug/rmate .
             file ./rmate
             docker build -f Dockerfile-<< parameters.target >> -t 'arm_rust:testing' .
-            # echo "Running rmate binary for << parameters.target >>"
+            echo "Running rmate binary for << parameters.target >>"
             docker run --rm 'arm_rust:testing' 2>output.log || echo
             # cat output.log
             grep "Error: \"Connection refused (os error" ./output.log || echo "code is " $?
+            echo && cat output.log
 
   macosimage:
     parameters:
