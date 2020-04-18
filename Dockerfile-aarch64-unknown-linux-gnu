@@ -1,0 +1,10 @@
+FROM arm64v8/debian:stretch-slim
+
+SHELL ["/bin/bash", "-c"]
+COPY qemu-aarch64-static /usr/bin
+COPY qemu-arm-static /usr/bin
+
+COPY rmate /usr/bin/
+
+# RUN file /usr/bin/rmate
+CMD ["/usr/bin/qemu-aarch64-static", "/usr/bin/rmate", "-vvv", "-w", "Cargo.toml"]
