@@ -54,7 +54,7 @@ pub(crate) fn write_to_disk(
                 trace!("<- breaking out of write_to_disk");
                 break;
             }
-            trace!("  -->  save instruction:\t{:?}", myline.trim());
+            trace!("-->  save instruction:\t{:?}", myline.trim());
             assert!(myline.trim().contains("data: "));
             no_data_chunks += 1;
             let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
@@ -91,39 +91,6 @@ pub(crate) fn write_to_disk(
                     n
                 );
             }
-            // loop {
-            //     let buffer = buffer_reader.fill_buf()?;
-            //     if buffer.is_empty() {
-            //         warn!("HMMMMMMMMM..........MMMMMMMMMMMM");
-            //         break;
-            //     }
-            //     let length = buffer.len();
-            //     if total + length >= data_size {
-            //         trace!("Total recvd: {}", total + length);
-            //         trace!("length: {}", length);
-            //         let corrected_last_length = data_size - total;
-            //         trace!("  data_size: {}", data_size);
-            //         trace!("  left over size: {}", length - corrected_last_length);
-            //         buf_writer.write_all(&buffer[..corrected_last_length])?;
-            //         // trace!( "extra bytes read {}", String::from_utf8_lossy(&buffer[corrected_last_length..]));
-            //         buffer_reader.consume(corrected_last_length);
-            //         trace!(" -- wrote last chunk: {}", corrected_last_length);
-            //         buf_writer.flush()?;
-            //         total_written += corrected_last_length;
-            //         break;
-            //     } else {
-            //         buf_writer.write_all(&buffer)?;
-            //         total_written += length;
-            //         total += length;
-            //         trace!(
-            //             " -- written so far: {}/{}-byte (chunk: {}) to temp file",
-            //             total,
-            //             data_size,
-            //             length
-            //         );
-            //         buffer_reader.consume(length);
-            //     }
-            // }
         }
     }
     let t2 = Instant::now();
