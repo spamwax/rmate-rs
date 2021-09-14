@@ -47,7 +47,7 @@ pub(crate) fn close_buffer(
             trace!("Finished receiving closing instructions");
             break;
         }
-        let command: Vec<&str> = myline.trim().splitn(2, ":").collect::<Vec<&str>>();
+        let command: Vec<&str> = myline.trim().splitn(2, ':').collect::<Vec<&str>>();
         trace!("  close instruction:\t{:?}", command);
         let (_, closed_buffer) = opened_buffers.remove_entry(command[1].trim()).unwrap();
         info!("Closed: {:?}", closed_buffer.canon_path.as_os_str());
@@ -92,10 +92,10 @@ pub(crate) fn open_file_in_remote(
             write!(&mut buf_writer, "{}", header).map_err(|e| e.to_string())?;
 
             if let Some(filetype) = &opened_buffer.filetype {
-                write!(&mut buf_writer, "file-type: {}\n", filetype).map_err(|e| e.to_string())?;
+                writeln!(&mut buf_writer, "file-type: {}", filetype).map_err(|e| e.to_string())?;
                 debug!("file-type: {}", filetype);
             }
-            write!(&mut buf_writer, "data: {}\n", opened_buffer.size).map_err(|e| e.to_string())?;
+            writeln!(&mut buf_writer, "data: {}", opened_buffer.size).map_err(|e| e.to_string())?;
 
             // Read file from disk and send it over the socket
             let fp = File::open(&opened_buffer.canon_path).map_err(|e| e.to_string())?;
@@ -111,7 +111,7 @@ pub(crate) fn open_file_in_remote(
                     break;
                 }
                 total += length;
-                buf_writer.write_all(&buffer).map_err(|e| e.to_string())?;
+                buf_writer.write_all(buffer).map_err(|e| e.to_string())?;
                 trace!("  sent {} / {}", length, total);
                 buf_reader.consume(length);
             }

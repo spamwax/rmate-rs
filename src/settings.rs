@@ -9,7 +9,7 @@ use structopt::clap::AppSettings;
 use structopt::StructOpt;
 
 pub(crate) const NO_TRIES_CREATE_BACKUP_FN: u8 = 5;
-pub(crate) const RMATE_HOST: &'static str = "localhost";
+pub(crate) const RMATE_HOST: &str = "localhost";
 pub(crate) const RMATE_PORT: u16 = 52698;
 
 // program settings from command-line arguments and environment variables

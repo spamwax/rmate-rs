@@ -20,7 +20,7 @@ pub(crate) fn write_to_disk(
 
     buffer_reader.read_line(&mut myline)?;
     trace!("  save instruction:\t{:?}", myline.trim());
-    let token = myline.trim().rsplitn(2, ":").collect::<Vec<&str>>()[0]
+    let token = myline.trim().rsplitn(2, ':').collect::<Vec<&str>>()[0]
         .trim()
         .to_string();
     trace!("  token: >{}<", token);
@@ -57,7 +57,7 @@ pub(crate) fn write_to_disk(
             trace!("-->  save instruction:\t{:?}", myline.trim());
             assert!(myline.trim().contains("data: "));
             no_data_chunks += 1;
-            let data_size = myline.rsplitn(2, ":").collect::<Vec<&str>>()[0]
+            let data_size = myline.rsplitn(2, ':').collect::<Vec<&str>>()[0]
                 .trim()
                 .parse::<usize>()
                 .unwrap();
@@ -122,11 +122,8 @@ pub(crate) fn write_to_disk(
     );
     opened_buffers
         .get_mut(&token)
-        .ok_or(Error::new(
-            ErrorKind::Other,
-            "can't find the open buffer for saving",
-        ))
-        .and_then(|opened_buffer| {
+        .ok_or_else(|| Error::new(ErrorKind::Other, "can't find the open buffer for saving"))
+        .map(|opened_buffer| {
             // First we try to create a file name to be used as back up of original one
             let fn_canon = opened_buffer.canon_path.as_path();
             let mut backup_fn_canon = opened_buffer.canon_path.clone();
@@ -166,7 +163,7 @@ pub(crate) fn write_to_disk(
                     backup = Some(backup_fn_canon);
                 }
             }
-            Ok((opened_buffer, backup))
+            (opened_buffer, backup)
         })
         .and_then(|(opened_buffer, backup)| {
             // Back up the original file before writing over it from temp. file
@@ -195,9 +192,9 @@ pub(crate) fn write_to_disk(
                     format!("{}: {:?}", fn_canon.to_string_lossy(), e),
                 )
             });
-            if copy_result.is_ok() {
+            if let Ok(cr) = copy_result {
                 buffer_writer.flush()?;
-                Ok((copy_result.unwrap(), fn_canon, backup))
+                Ok((cr, fn_canon, backup))
             } else {
                 error!("Couldn't save to main file ({})", fn_canon.display());
                 error!("  Remote changes are not applied.");
@@ -228,7 +225,7 @@ pub(crate) fn write_to_disk(
                 }
             }
         })
-        .and_then(|(written_size, fn_canon, backup)| {
+        .map(|(written_size, fn_canon, backup)| {
             // Verify # of bytes written & delete backup file
             assert_eq!(total_written as u64, written_size);
             info!("Saved to {:?}", fn_canon);
@@ -243,7 +240,7 @@ pub(crate) fn write_to_disk(
                     trace!("Removed backup file: {:}", backup_fn.display());
                 }
             }
-            Ok(written_size as usize)
+            written_size as usize
         })
 }
 
@@ -262,7 +259,7 @@ pub(crate) fn get_requested_buffers(
         } else {
             file_name_string = filename_canon
                 .file_name()
-                .ok_or("no valid file name found in input argument".to_string())?
+                .ok_or_else(|| "no valid file name found in input argument".to_string())?
                 .to_os_string();
         }
 
@@ -311,9 +308,9 @@ pub(crate) fn get_requested_buffers(
                 canon_path: filename_canon,
                 // display_name: file_name_string.clone(),
                 display_name: disp_name,
-                line: line,
-                filetype: filetype,
-                canwrite: canwrite,
+                line,
+                filetype,
+                canwrite,
                 temp_file: rand_temp_file,
                 size: filesize,
             },
