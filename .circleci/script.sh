@@ -1,10 +1,11 @@
+#!/usr/bin/env bash
 # This script takes care of testing your crate
 
 set -ex
 
 run_tests() {
     runner="$1"
-    working_dir="$2"
+    # working_dir="$2"
     # runner="cargo run --target "$TARGET" --"
     export RMATE_HOST=localhost
     export RMATE_PORT=55555

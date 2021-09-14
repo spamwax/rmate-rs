@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/local/bin/bash
+#!/usr/bin/env bash
 
 set -ex
 

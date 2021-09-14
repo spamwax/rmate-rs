@@ -15,8 +15,8 @@ deploy() {
     export CIRCLE_PROJECT_USERNAME=listboss
     export CIRCLE_PROJECT_REPONAME=rmate-rust
     export CIRCLE_TAG=v1.0
-    echo ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME} ${CIRCLE_SHA1} ${CIRCLE_TAG} ${artifacts}
-    "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ${artifacts}
+    echo ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME} "${CIRCLE_SHA1}" ${CIRCLE_TAG} "${artifacts}"
+    "$ghr_exe" -t "${GITHUB_TOKEN}" -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c "${CIRCLE_SHA1}" -delete ${CIRCLE_TAG} "${artifacts}"
 }
 
 main() {
@@ -24,17 +24,17 @@ main() {
     cd /tmp
     case $CIRCLE_OS_NAME in
         linux)
-            ghr_link=https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_linux_amd64.tar.gz
+            # ghr_link=https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_linux_amd64.tar.gz
             ghr_archive=ghr_"$GHRELEASER_VERSION"_linux_amd64
-            curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/$ghr_archive.tar.gz
+            curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/"$ghr_archive".tar.gz
 
             tar xzvf "$ghr_archive".tar.gz
             export artifacts=/tmp/rmate_$TARGET.tar.gz
             ;;
         macos)
-            ghr_link=https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_darwin_amd64.zip
+            # ghr_link=https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/ghr_"$GHRELEASER_VERSION"_darwin_amd64.zip
             ghr_archive=ghr_"$GHRELEASER_VERSION"_darwin_amd64
-            curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/$ghr_archive.zip
+            curl -L -O https://github.com/tcnksm/ghr/releases/download/"$GHRELEASER_VERSION"/"$ghr_archive".zip
 
             unzip "$ghr_archive".zip
             export artifacts=/tmp/rmate_$TARGET.zip
@@ -50,8 +50,8 @@ main() {
     # export CIRCLE_PROJECT_USERNAME=listboss
     # export CIRCLE_PROJECT_REPONAME=rmate-rust
     # export CIRCLE_TAG=v1.0
-    echo ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME} ${CIRCLE_SHA1} ${CIRCLE_TAG} ${artifacts}
-    "$ghr_exe" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -replace ${CIRCLE_TAG} ${artifacts}
+    echo ${CIRCLE_PROJECT_USERNAME} ${CIRCLE_PROJECT_REPONAME} "${CIRCLE_SHA1}" ${CIRCLE_TAG} "${artifacts}"
+    "$ghr_exe" -t "${GITHUB_TOKEN}" -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c "${CIRCLE_SHA1}" -replace ${CIRCLE_TAG} "${artifacts}"
 }
 
 pwd
