@@ -16,7 +16,8 @@ jobs:
         default: "hamiid/circleci-rust:latest"
     docker:
       # - image: circleci/rust:stretch
-      - image: "<< parameters.image >>"
+      # - image: "<< parameters.image >>"
+      - image: circleci/rust:1.54.0-bullseye
     environment:
       TARGET: "<< parameters.target >>"
       BUILD_TYPE: "<< parameters.build_type >>"
@@ -112,7 +113,9 @@ jobs:
 
   arm_runner:
     docker:
-      - image: hamiid/circleci-rust:latest
+      # - image: hamiid/circleci-rust:latest
+      - image: circleci/rust:1.54.0-bullseye
+
     environment:
       RUST_BACKTRACE: "1"
       CIRCLE_OS_NAME: linux
@@ -164,9 +167,9 @@ jobs:
         default: false
       rust:
         type: string
-        default: 1.42.0
+        default: 1.55.0
     macos:
-      xcode: "10.0"
+      xcode: "11.0"
     environment:
       RUST_BACKTRACE: "1"
       TARGET: x86_64-apple-darwin
