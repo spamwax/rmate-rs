@@ -131,6 +131,10 @@ jobs:
           name: update apt-get
           command: |
             sudo apt-get update
+      - run:
+          name: install arm gcc stuff
+          command: |
+            sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
       - checkout
       - run:
           name: Build
@@ -356,7 +360,7 @@ workflows:
     jobs:
       - macosimage:
           name: macOS-64bit
-          rust: 1.42.0
+          # rust: 1.55.0
           filters:
             branches:
               only: [master, develop]
@@ -365,7 +369,7 @@ workflows:
     jobs:
       - macosimage:
           name: macOS-64bit-release
-          rust: 1.42.0
+          # rust: 1.42.0
           release: true
           filters:
             tags:
