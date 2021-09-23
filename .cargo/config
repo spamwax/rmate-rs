@@ -2,7 +2,7 @@
 linker = "aarch64-linux-gnu-gcc"
 
 [target.armv7-unknown-linux-gnueabihf]
-linker = "arm-linux-gnueabihf-gcc-6"
+linker = "arm-linux-gnueabihf-gcc"
 
 [target.armv7-unknown-linux-gnueabi]
-linker = "arm-linux-gnueabi-gcc-6"
+linker = "arm-linux-gnueabi-gcc"
