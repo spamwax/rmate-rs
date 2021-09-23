@@ -135,6 +135,8 @@ jobs:
           name: install arm gcc stuff
           command: |
             sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+            sudo apt-get install -y libc6-dev-armhf-cross qemu-user-static
+            sudo apt-get install -y libc6-dev-arm64-cross
       - checkout
       - run:
           name: Build
