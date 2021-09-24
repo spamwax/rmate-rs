@@ -143,28 +143,38 @@ jobs:
           command: |
             rustup target add "<< parameters.target >>"
             cargo build --target $TARGET
-      - setup_remote_docker
       - run:
-          name: Pull correct arm/debian images
+          name: Use qemu-user-static to run rmate
           command: |
-            sleep 10
             if [ $TARGET = "aarch64-unknown-linux-gnu" ]; then
-                docker pull arm64v8/debian:stretch-slim
+                export LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib64
+                qemu-aarch64-static -L /usr/aarch64-linux-gnu target/aarch64-unknown-linux-gnu/debug/rmate
             else
-                docker pull arm32v7/debian:stretch-slim
+                export LD_LIBRARY_PATH=/usr/arm-linux-gnueabihf/lib
+                qemu-arm-static -L /usr/aarch64-linux-gnu target/arm-unknown-linux-gnueabihf/debug/rmate
             fi
-      - run:
-          name: Run under qemu
-          command: |
-            cp /usr/bin/qemu-arm-static .
-            cp /usr/bin/qemu-aarch64-static .
-            cp target/$TARGET/debug/rmate .
-            file ./rmate
-            docker build -f Dockerfile-<< parameters.target >> -t 'arm_rust:testing' .
-            echo && echo "Running rmate binary for << parameters.target >>"
-            docker run --rm 'arm_rust:testing' 2>output.log || echo
-            grep "Error: \"Connection refused (os error" ./output.log
-            echo && cat output.log
+      # - setup_remote_docker
+      # - run:
+      #     name: Pull correct arm/debian images
+      #     command: |
+      #       sleep 10
+      #       if [ $TARGET = "aarch64-unknown-linux-gnu" ]; then
+      #           docker pull arm64v8/debian:stretch-slim
+      #       else
+      #           docker pull arm32v7/debian:stretch-slim
+      #       fi
+      # - run:
+      #     name: Run under qemu
+      #     command: |
+      #       cp /usr/bin/qemu-arm-static .
+      #       cp /usr/bin/qemu-aarch64-static .
+      #       cp target/$TARGET/debug/rmate .
+      #       file ./rmate
+      #       docker build -f Dockerfile-<< parameters.target >> -t 'arm_rust:testing' .
+      #       echo && echo "Running rmate binary for << parameters.target >>"
+      #       docker run --rm 'arm_rust:testing' 2>output.log || echo
+      #       grep "Error: \"Connection refused (os error" ./output.log
+      #       echo && cat output.log
 
   macosimage:
     parameters:
