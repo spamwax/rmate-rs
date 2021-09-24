@@ -148,11 +148,13 @@ jobs:
           command: |
             if [ $TARGET = "aarch64-unknown-linux-gnu" ]; then
                 export LD_LIBRARY_PATH=/usr/aarch64-linux-gnu/lib64
-                qemu-aarch64-static -L /usr/aarch64-linux-gnu target/aarch64-unknown-linux-gnu/debug/rmate
+                qemu-aarch64-static -L /usr/aarch64-linux-gnu target/aarch64-unknown-linux-gnu/debug/rmate -vvv -w Cargo.toml 2>output.log || echo
             else
                 export LD_LIBRARY_PATH=/usr/arm-linux-gnueabihf/lib
-                qemu-arm-static -L /usr/aarch64-linux-gnu target/arm-unknown-linux-gnueabihf/debug/rmate
+                qemu-arm-static -L /usr/arm-linux-gnueabihf target/armv7-unknown-linux-gnueabihf/debug/rmate -vvv -w Cargo.toml 2>output.log || echo
             fi
+            grep "Error: \"Connection refused (os error" ./output.log
+            echo && cat output.log
       # - setup_remote_docker
       # - run:
       #     name: Pull correct arm/debian images
