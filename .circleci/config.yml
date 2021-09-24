@@ -7,17 +7,16 @@ jobs:
         type: string
       rust:
         type: string
-        default: 1.42.0
+        default: 1.54.0
       build_type:
         type: string
         default: "debug"
       image:
         type: string
-        default: "hamiid/circleci-rust:latest"
+        default: "circleci/rust:1.54.0-bullseye"
     docker:
-      # - image: circleci/rust:stretch
-      # - image: "<< parameters.image >>"
-      - image: circleci/rust:1.54.0-bullseye
+      - image: "<< parameters.image >>"
+      # - image: circleci/rust:1.54.0-bullseye
     environment:
       TARGET: "<< parameters.target >>"
       BUILD_TYPE: "<< parameters.build_type >>"
@@ -59,7 +58,7 @@ jobs:
         type: string
       rust:
         type: string
-        default: 1.42.0
+        default: 1.54.0
       image:
         type: string
         default: hamiid/circleci-rust:latest
@@ -113,7 +112,6 @@ jobs:
 
   arm_runner:
     docker:
-      # - image: hamiid/circleci-rust:latest
       - image: circleci/rust:1.54.0-bullseye
 
     environment:
@@ -245,7 +243,7 @@ workflows:
       - linux:
           name: Linux-32bit
           target: i686-unknown-linux-gnu
-          image: hamiid/rust-i386
+          # image: hamiid/rust-i386
           build_type: release
           filters:
             tags:
@@ -332,7 +330,6 @@ workflows:
         - linux:
             name: Linux-64bit
             target: x86_64-unknown-linux-gnu
-            rust: 1.42.0
             filters:
               branches:
                 only: /.*/
@@ -341,7 +338,6 @@ workflows:
         - tests:
             name: Linux-64bit-test
             target: x86_64-unknown-linux-gnu
-            rust: 1.42.0
             filters:
               branches:
                 only: [master, develop]
@@ -352,7 +348,6 @@ workflows:
         - linux:
             name: Linux-64bit-release
             target: x86_64-unknown-linux-gnu
-            rust: 1.42.0
             build_type: release
             filters:
               tags:
@@ -374,7 +369,6 @@ workflows:
     jobs:
       - macosimage:
           name: macOS-64bit
-          # rust: 1.55.0
           filters:
             branches:
               only: [master, develop]
@@ -383,7 +377,6 @@ workflows:
     jobs:
       - macosimage:
           name: macOS-64bit-release
-          # rust: 1.42.0
           release: true
           filters:
             tags:
