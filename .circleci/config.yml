@@ -41,7 +41,9 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
-            sudo apt-get install -y gcc-multilib
+            if [ $TARGET = "i686-unknown-linux-gnu" ]; then
+                sudo apt-get install -y gcc-multilib
+            fi
       - run:
           name: Add Rust Components
           command: |
