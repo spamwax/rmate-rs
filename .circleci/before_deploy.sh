@@ -50,8 +50,9 @@ create_tar() {
   elif [[ $TARGET == *"arm"* ]]; then
     strip_cmd="/usr/bin/arm-linux-gnueabi-strip"
   fi
-  "$strip_cmd" target/"$TARGET"/release/rmate || true
-  tar czvf "$artifacts" "target/$TARGET/release/rmate"
+  cp target/"$TARGET"/release/rmate . || true
+  "$strip_cmd" rmate || true
+  tar czvf "$artifacts" rmate
   mv "$artifacts" /tmp
 }
 
@@ -59,8 +60,9 @@ build_mac_artifact() {
     pwd
     ls -la
     artifacts=rmate_"$TARGET".zip
-    strip target/"$TARGET"/release/rmate || true
-    zip "$artifacts" target/"$TARGET"/release/rmate
+    cp target/"$TARGET"/release/rmate . || true
+    strip rmate || true
+    zip "$artifacts" rmate
     mv "$artifacts" /tmp
     # src=$1
     # stage=$2

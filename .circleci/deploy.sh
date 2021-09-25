@@ -63,6 +63,7 @@ pwd
 
 if [ -n "$CIRCLE_TEST" ]; then
     echo "CIRCLE_TEST is set, exitting"
+    exit 1
 fi
 if [ -z "$CIRCLE_TAG" ]; then
     echo "Not a tagged commit, exitting."
