@@ -61,7 +61,7 @@ pwd
   # source /home/circleci/.cargo/env
 # fi
 
-if [ -n "$CIRCLE_TEST" ]; then
+if [ -n "$CIRCLE_TEST" ] && [ "$CIRCLE_TEST" = true ]; then
     echo "CIRCLE_TEST is set, exitting"
     exit 1
 fi
