@@ -6,7 +6,7 @@ task:
   only_if: $CIRRUS_TAG != ''
   env:
     BASH_CMD: /usr/local/bin/bash
-    CIRRUS_CLONE_DEPTH: 1
+    CIRRUS_CLONE_DEPTH: "1"
     HOME: /tmp
     GITHUB_TOKEN: ENCRYPTED[ec1127ebd80734d2afe707a79a8fb41b1889ab7e574903649f63b8cc46aae5413699ea23a9d37fcf6e0891deced52a8a]
   install_deps_script:
