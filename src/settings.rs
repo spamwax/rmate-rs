@@ -39,6 +39,10 @@ pub(crate) struct Settings {
     #[structopt(short, long)]
     pub force: bool,
 
+    /// Create a new file if the given file name does not exist
+    #[structopt(short, long)]
+    pub create: bool,
+
     /// Verbose logging messages (can be repeated: -vvv)
     #[structopt(short, long, parse(from_occurrences))]
     pub verbose: u8,

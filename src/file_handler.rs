@@ -251,7 +251,25 @@ pub(crate) fn get_requested_buffers(
 
     // Iterate over all files and create bookkeeping info
     for (idx, file) in settings.files.iter().enumerate() {
-        let filename_canon = canonicalize(file).map_err(|e| e.to_string())?;
+        let filename_canon = if !settings.create {
+            canonicalize(file).map_err(|e| e.to_string())?
+        } else {
+            let r = canonicalize(file);
+            match r {
+                Err(e) => match e.kind() {
+                    ErrorKind::NotFound => {
+                        info!("Creating new empty file: {:?}", &file);
+                        let _ = File::create(file).map_err(|e| e.to_string())?;
+                        canonicalize(file).map_err(|e| e.to_string())?
+                    }
+                    _ => return Err(e.to_string()),
+                },
+                Ok(fc) => {
+                    warn!("File already exists: {:?}", &fc);
+                    fc
+                }
+            }
+        };
 
         let file_name_string;
         if settings.names.len() > idx {
