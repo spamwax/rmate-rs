@@ -251,7 +251,7 @@ pub(crate) fn get_requested_buffers(
 
     // Iterate over all files and create bookkeeping info
     for (idx, file) in settings.files.iter().enumerate() {
-        let filename_canon = if !settings.create {
+        let filename_canon = if settings.nocreate {
             canonicalize(file).map_err(|e| e.to_string())?
         } else {
             let r = canonicalize(file);
@@ -264,9 +264,8 @@ pub(crate) fn get_requested_buffers(
                     }
                     _ => return Err(e.to_string()),
                 },
-                Ok(fc) => {
-                    warn!("File already exists: {:?}", &fc);
-                    fc
+                Ok(_) => {
+                    canonicalize(file).map_err(|e| e.to_string())?
                 }
             }
         };
