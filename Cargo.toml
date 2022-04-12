@@ -1,6 +1,6 @@
 [package]
 name = "rmate"
-version = "1.1.0"
+version = "1.1.2"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,7 +20,10 @@ dirs = "3.0"
 # hostname = "0.3"
 
 [profile.release]
-lto = "fat"
-
+opt-level = 'z'     # Optimize for size.
+lto = true          # Enable Link Time Optimization
+codegen-units = 1   # Reduce number of codegen units to increase optimizations.
+panic = 'abort'     # Abort on panic
+strip = true        # Strip symbols from binary*
 [dev-dependencies]
 version-sync = "0.8"
