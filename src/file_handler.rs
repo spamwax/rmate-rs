@@ -258,7 +258,22 @@ pub(crate) fn get_requested_buffers(
             match r {
                 Err(e) => match e.kind() {
                     ErrorKind::NotFound => {
+                        // Ask to create file
+                        let mut input = String::new();
+                        println!("\x1b[33mFile doesn't exist. Create? (y/n)\x1b[0m");
+                        loop {
+                            io::stdin().read_line(&mut input).expect("error: unable to read user input");
+                            match input.trim() {
+                                "y"|"yes" => break,
+                                "n"|"no" => std::process::exit(0),
+                                _ => {
+                                    println!("Incorrect input. y/n");
+                                    input.clear()
+                                },
+                            }
+                        }
                         info!("Creating new empty file: {:?}", &file);
+
                         let _ = File::create(file).map_err(|e| e.to_string())?;
                         canonicalize(file).map_err(|e| e.to_string())?
                     }
