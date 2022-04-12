@@ -27,9 +27,10 @@ You can build **rmate-rs** with docker using `build.sh` script. Just run:
 
 ### Changelog:
 - 20.22.04.12:
-  - Added question before create non-existing file.
-  - Updated `.gitignore`.
+  - Now asking before creating non-existing file.
   - Added build script.
+  - Added build options to `Cargo.toml` allowing reduce binary size.
+  - Updated `.gitignore`.
 - 2022.04.06:
   - Inverted `--create` flag.
   - Updated `.gitignore`.
