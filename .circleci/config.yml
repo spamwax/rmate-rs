@@ -7,13 +7,13 @@ jobs:
         type: string
       rust:
         type: string
-        default: 1.54.0
+        default: 1.61.0
       build_type:
         type: string
         default: "debug"
       image:
         type: string
-        default: "circleci/rust:1.54.0-bullseye"
+        default: "cimg/rust:1.61.0"
     docker:
       - image: "<< parameters.image >>"
       # - image: circleci/rust:1.54.0-bullseye
@@ -66,7 +66,7 @@ jobs:
         type: string
       rust:
         type: string
-        default: 1.54.0
+        default: 1.61.0
       image:
         type: string
         default: hamiid/circleci-rust:latest
@@ -101,7 +101,8 @@ jobs:
       target:
         type: string
     docker:
-      - image: circleci/rust:stretch
+      # - image: circleci/rust:stretch
+      - image: cimg/rust:1.61.0
     environment:
       TARGET: "<< parameters.target >>"
       CIRCLECI_TEST: "false"
@@ -120,7 +121,8 @@ jobs:
 
   arm_runner:
     docker:
-      - image: circleci/rust:1.54.0-bullseye
+      # - image: circleci/rust:1.54.0-bullseye
+      - image: circleci/rust:1.61.0
 
     environment:
       RUST_BACKTRACE: "1"
@@ -191,9 +193,9 @@ jobs:
         default: false
       rust:
         type: string
-        default: 1.55.0
+        default: 1.61.0
     macos:
-      xcode: "11.0"
+      xcode: "11.7"
     environment:
       RUST_BACKTRACE: "1"
       TARGET: x86_64-apple-darwin
