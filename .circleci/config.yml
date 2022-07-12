@@ -71,8 +71,8 @@ jobs:
         type: string
         default: hamiid/circleci-rust:latest
     docker:
-      # - image: circleci/rust:stretch
-      - image: "<< parameters.image >>"
+      - image: cimg/rust:1.61.0
+      # - image: "<< parameters.image >>"
     environment:
       RUST_BACKTRACE: "1"
       TARGET: "<< parameters.target >>"
