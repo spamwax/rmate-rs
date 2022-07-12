@@ -75,6 +75,7 @@ pub(crate) struct OpenedBuffer {
     pub(crate) size: u64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct RcSettings {
     pub(crate) host: Option<String>,
