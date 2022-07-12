@@ -34,7 +34,9 @@ run_tests() {
             return
             ;;
     esac
-    grep "Error: \"Connection refused (os error" ./output.log
+    # grep "Error: \"Connection refused (os error" ./output.log
+    cat ./output.log
+    grep "Connection refused (os error " ./output.log
     echo && cat output.log || echo
 }
 
