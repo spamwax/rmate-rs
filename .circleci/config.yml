@@ -122,7 +122,7 @@ jobs:
   arm_runner:
     docker:
       # - image: circleci/rust:1.54.0-bullseye
-      - image: circleci/rust:1.61.0
+      - image: cimg/rust:1.61.0
 
     environment:
       RUST_BACKTRACE: "1"
@@ -205,7 +205,7 @@ jobs:
       - run:
           name: "Install Rust"
           command: |
-            sudo mkdir /opt
+            sudo mkdir -p /opt
             curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain << parameters.rust >>
             sudo ln -s ~/.cargo/bin/* /usr/local/bin
       - run:
