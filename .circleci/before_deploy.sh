@@ -43,7 +43,7 @@ create_tar() {
   pwd
   ls -la
   artifacts=rmate_"$TARGET".tar.gz
-  strip_cmd=strip
+  strip_cmd="strip"
 
   if [[ $TARGET == *"aarch64"* ]]; then
     strip_cmd="/usr/bin/aarch64-linux-gnu-strip"

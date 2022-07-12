@@ -1,0 +1,48 @@
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '*'
+  workflow_dispatch:
+  # For quickly detecting important differences in runner configurations
+
+name: release
+
+env:
+  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
+  OSX_SDK_VERSION: 11.1
+  RUST_BACKTRACE: "1"
+
+jobs:
+  x86_64-linux:
+    if: ${{ github.ref_type == 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'x86_64-unknown-linux-gnu'
+      build_type: 'release'
+      run_tests: false
+  i686-linux:
+    if: ${{ github.ref_type == 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'i686-unknown-linux-gnu'
+      build_type: 'release'
+      run_tests: false
+  aarch64-linux:
+    if: ${{ github.ref_type == 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'aarch64-unknown-linux-gnu'
+      arm: true
+      build_type: 'release'
+      run_tests: false
+  armv7-linux:
+    if: ${{ github.ref_type == 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'armv7-unknown-linux-gnueabihf'
+      arm: true
+      build_type: 'release'
+      run_tests: false
+
