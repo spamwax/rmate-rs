@@ -12,6 +12,8 @@ use settings::Settings;
 use structopt::StructOpt;
 
 // TODO: Build universal binary for macos on github actions.
+// TODO: Put the upload/download/release section of github actions into a separate reusable
+// workflow that each step in release.yml calls it with different input parameters.
 
 #[allow(clippy::option_map_unit_fn)]
 fn main() -> Result<(), String> {
