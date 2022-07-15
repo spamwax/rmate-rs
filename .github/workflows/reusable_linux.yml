@@ -90,8 +90,8 @@ jobs:
         with:
           name: upload-binary-artifact
           path: |
-            rmate_${{ inputs.target }}.tar.gz
             rmate_${{ inputs.target }}.zip
+            rmate_${{ inputs.target }}.tar.gz
           if-no-files-found: warn
 
   release_binary:
@@ -107,5 +107,5 @@ jobs:
         with:
           fail_on_unmatched_files: false
           files: |
-            rmate_${{ inputs.target }}
             rmate_${{ inputs.target }}.zip
+            rmate_${{ inputs.target }}.tar.gz
