@@ -3,7 +3,6 @@ set -ex
 
 create_linux() {
   pwd
-  ls -la
   artifacts=rmate_"$TARGET".tar.gz
   strip_cmd="strip"
 
@@ -15,15 +14,16 @@ create_linux() {
   cp target/"$TARGET/$BUILD_TYPE"/rmate . || true
   "$strip_cmd" rmate || true
   tar czvf "$artifacts" rmate
+  ls -la
 }
 
 create_macos() {
     pwd
-    ls -la
     artifacts=rmate_"$TARGET".zip
     cp target/"$TARGET/$BUILD_TYPE"/rmate . || true
     strip rmate || true
     zip "$artifacts" rmate
+    ls -la
 }
 
 if [ -z "$RELEASE_COMMIT" ]; then

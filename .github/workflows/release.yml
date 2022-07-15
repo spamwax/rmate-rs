@@ -45,4 +45,13 @@ jobs:
       arm: true
       build_type: 'release'
       run_tests: false
+  macos:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_macos.yml
+    with:
+      target: 'x86_64-apple-darwin'
+      build_type: 'release'
+      run_tests: false
+
+
 

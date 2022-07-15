@@ -11,6 +11,8 @@ use settings::OpenedBuffer;
 use settings::Settings;
 use structopt::StructOpt;
 
+// TODO: Build universal binary for macos on github actions.
+
 #[allow(clippy::option_map_unit_fn)]
 fn main() -> Result<(), String> {
     // Read settings from cmd line arguments

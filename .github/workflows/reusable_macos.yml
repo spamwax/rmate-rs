@@ -1,4 +1,4 @@
-name: Reusable workflow for linux
+name: Reusable workflow for macos
 
 on:
   workflow_call:
@@ -27,7 +27,7 @@ jobs:
     name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [macos-latest]
         rust: [1.56.0, stable]
     runs-on: ${{ matrix.os }}
     steps:
@@ -36,24 +36,7 @@ jobs:
           submodules: recursive
       - name: Install pcregrep
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pcregrep
-      - name: Install arm compilers
-        if: ${{ inputs.arm }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
-      - name: Install multilib compiler
-        if: ${{ inputs.target == 'i686-unknown-linux-gnu' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-multilib
-      - name: Install arm runner
-        if: ${{ inputs.arm && inputs.run_tests }}
-        run: |
-          sudo apt-get install -y libc6-dev-armhf-cross qemu-user-static
-          sudo apt-get install -y libc6-dev-arm64-cross
-
+          brew install pcre2
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -61,7 +44,6 @@ jobs:
           toolchain: stable
           target: ${{ inputs.target }}
           override: true
-
       - name: Build binary (debug)
         if: ${{ inputs.build_type == 'debug' }}
         uses: actions-rs/cargo@v1
@@ -82,7 +64,6 @@ jobs:
         if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
         run: |
           .github/workflows/prepare_artifact.sh
-
       - name: Upload for release
         id: upload_artifact
         uses: actions/upload-artifact@v2
@@ -90,7 +71,7 @@ jobs:
         with:
           name: upload-binary-artifact
           path: |
-            rmate_${{ inputs.target }}.tar.gz
+            rmate_${{ inputs.target }}.zip
           if-no-files-found: warn
 
   release_binary:
@@ -106,4 +87,4 @@ jobs:
         with:
           fail_on_unmatched_files: false
           files: |
-            rmate_${{ inputs.target }}.tar.gz
+            rmate_${{ inputs.target }}.zip
