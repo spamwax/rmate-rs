@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-create_tar() {
+create_linux() {
   pwd
   ls -la
   artifacts=rmate_"$TARGET".tar.gz
@@ -17,7 +17,7 @@ create_tar() {
   tar czvf "$artifacts" rmate
 }
 
-build_mac_artifact() {
+create_macos() {
     pwd
     ls -la
     artifacts=rmate_"$TARGET".zip
