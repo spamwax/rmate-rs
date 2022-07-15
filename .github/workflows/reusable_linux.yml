@@ -20,6 +20,7 @@ env:
   ARM: ${{ inputs.arm }}
   TARGET: ${{ inputs.target }}
   BUILD_TYPE: ${{ inputs.build_type }}
+  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
 
 jobs:
   build_binary:

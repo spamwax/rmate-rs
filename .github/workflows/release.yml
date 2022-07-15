@@ -16,21 +16,21 @@ env:
 
 jobs:
   x86_64-linux:
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
       target: 'x86_64-unknown-linux-gnu'
       build_type: 'release'
       run_tests: false
   i686-linux:
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
       target: 'i686-unknown-linux-gnu'
       build_type: 'release'
       run_tests: false
   aarch64-linux:
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
       target: 'aarch64-unknown-linux-gnu'
@@ -38,7 +38,7 @@ jobs:
       build_type: 'release'
       run_tests: false
   armv7-linux:
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
       target: 'armv7-unknown-linux-gnueabihf'
