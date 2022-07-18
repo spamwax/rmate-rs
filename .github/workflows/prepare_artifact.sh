@@ -12,6 +12,10 @@ create_linux() {
     strip_cmd="/usr/bin/arm-linux-gnueabi-strip"
   fi
   ls "/usr/bin/*strip*" || true
+  which "arm-linux-gnu-strip" || true
+  which "arm-linux-gnueabi-strip" || true
+  which "arm-linux-gnueabihf-strip" || true
+
   cp target/"$TARGET/$BUILD_TYPE"/rmate . || true
   "$strip_cmd" rmate || true
   tar czvf "$artifacts" rmate
