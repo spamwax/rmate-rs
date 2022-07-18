@@ -4,7 +4,7 @@
 
 fast, reliable implementation of **rmate** in Rust.
 
-Pre-complied binaries for following platforms are available in [Releases page](https://github.com/listboss/rmate-rust/releases).
+Pre-complied binaries for following platforms are available in [Releases page](https://github.com/spamwax/rmate-rs/releases/latest).
 
 | Platform | CPU Architecture                               |
 |----------|------------------------------------------------|
