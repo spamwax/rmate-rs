@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -ex
+set -x
 
 GREEN=$'\e[0;32m'
 RED=$'\e[0;31m'
@@ -67,13 +67,18 @@ else
     fi
     ls -l "$libpath"
     echo $(which $arm_runner)
-    $arm_runner --help || true
-    $arm_runner -v || true
-    $arm_runner -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log || true
-    $arm_runner -v -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log || true
+    # $arm_runner --help || true
+    # $arm_runner -v || true
+    $arm_runner -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log
+    echo "exit code: $?"
+    $arm_runner "$binary_path" -vvv -w Cargo.toml 2>output.log
+    echo "exit code: $?"
     cat output.log || true
+    sleep 2
     grep "Connection refused (os error " ./output.log
+    echo "exit code: $?\n"
     grep "Read disk settings-> { host: Some(" ./output.log
+    echo "exit code: $?\n"
     printf "\n\n\n"
     sleep 2
 fi
