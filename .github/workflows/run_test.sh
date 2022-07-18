@@ -65,7 +65,13 @@ else
         export LD_LIBRARY_PATH=$libpath/lib
         arm_runner="qemu-arm-static"
     fi
-    $arm_runner -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log
+    ls -l "$libpath"
+    echo $(which $arm_runner)
+    $arm_runner --help || true
+    $arm_runner -v || true
+    $arm_runner -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log || true
+    $arm_runner -v -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log || true
+    cat output.log || true
     grep "Connection refused (os error " ./output.log
     grep "Read disk settings-> { host: Some(" ./output.log
     printf "\n\n\n"
