@@ -57,6 +57,14 @@ jobs:
       target: 'aarch64-apple-darwin'
       build_type: 'release'
       run_tests: false
+  x86_64-illumos:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'x86_64-unknown-illumos'
+      build_type: 'release'
+      run_tests: false
+      cross: true
 
   gh_release:
     name: Release rmate
@@ -81,6 +89,9 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: binary-artifact-aarch64-apple-darwin
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-x86_64-unknown-illumos
       - run: ls -la /home/runner/work/rmate-rs/rmate-rs || true
       - uses: softprops/action-gh-release@v1
         with:

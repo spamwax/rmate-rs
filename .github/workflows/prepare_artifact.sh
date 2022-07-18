@@ -4,20 +4,21 @@ set -ex
 create_linux() {
   pwd
   artifacts=rmate_"$TARGET".tar.gz
-  strip_cmd="strip"
+  strip_cmd=
 
-  if [[ $TARGET == *"aarch64"* ]]; then
+  if [[ $TARGET == "aarch64-unknown-linux-gnu" ]]; then
     strip_cmd="/usr/bin/aarch64-linux-gnu-strip"
-  elif [[ $TARGET == *"arm"* ]]; then
+  elif [[ $TARGET == "armv7-unknown-linux-gnueabihf" ]]; then
     strip_cmd="/usr/bin/arm-linux-gnueabihf-strip"
+  elif [[ $TARGET == "x86_64-unknown-linux-gnu" || $TARGET == "i686-unknown-linux-gnu" ]]; then
+    strip_cmd=$(which strip)
   fi
-  ls "/usr/bin/*strip*" || true
-  which "arm-linux-gnu-strip" || true
-  which "arm-linux-gnueabi-strip" || true
-  which "arm-linux-gnueabihf-strip" || true
 
   cp target/"$TARGET/$BUILD_TYPE"/rmate . || true
-  "$strip_cmd" rmate || true
+  if [[ -n "$strip_cmd" ]]; then
+    "$strip_cmd" rmate || true
+  fi
+
   tar czvf "$artifacts" rmate
   ls -la
 }
@@ -39,9 +40,9 @@ fi
 
 echo "Preparing release for $TARGET"
 
-if [[ $TARGET == *"linux"* ]]; then
-    create_linux
-else
+if [[ $TARGET == *"apple"* ]]; then
     create_macos
+else
+    create_linux
 fi
 

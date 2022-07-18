@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# set -ex
+set -ex
 
 GREEN=$'\e[0;32m'
+RED=$'\e[0;31m'
 NC=$'\e[0m'
 
 
@@ -17,6 +18,19 @@ sleep 2
 echo "Running tests using target/${GREEN}$TARGET${NC}/debug/rmate"; echo
 binary_path=target/"$TARGET/$BUILD_TYPE"/rmate
 file "$binary_path"
+
+if [[ -n "$USE_CROSS" && "$USE_CROSS" == "true" ]]; then
+    echo "${GREEN}$TARGET${NC} binary ${RED}cannot be executed${NC} on Linux. Use Rust's cross."
+    # Show help message
+    cross run --target "$TARGET" -- --help || echo
+    # Test with local .rmate.rc
+    cross run --target "$TARGET" -- -vvv -w Cargo.toml 2>output.log || echo
+    grep "Connection refused (os error " ./output.log
+    grep "Read disk settings-> { host: Some(" ./output.log
+    printf "\n\n\n"
+    sleep 2
+    exit 0
+fi
 
 if [[ -z "$ARM" || "$ARM" == 'false' ]]; then
     # Show help message
