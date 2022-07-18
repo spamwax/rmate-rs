@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -x
+# set -x
 
 GREEN=$'\e[0;32m'
-RED=$'\e[0;31m'
 NC=$'\e[0m'
+# RED=$'\e[0;31m'
 
 
 # build an rmate.rc file
@@ -43,8 +43,14 @@ if [[ -z "$ARM" || "$ARM" == 'false' ]]; then
 
     # Test with local .rmate.rc
     $binary_path -vvv -w Cargo.toml 2>output.log || echo
-    grep "Connection refused (os error " ./output.log
-    grep "Read disk settings-> { host: Some(" ./output.log
+    if ! grep -q "Connection refused (os error " ./output.log; then
+        cat ./output.log
+        exit 1
+    fi
+    if ! grep -q "Read disk settings-> { host: Some(" ./output.log; then
+        cat ./output.log
+        exit 1
+    fi
     printf "\n\n\n"
     sleep 2
 
