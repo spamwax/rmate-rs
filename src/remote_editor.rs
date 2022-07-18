@@ -1,5 +1,5 @@
 use super::settings;
-use log::*;
+use log::{debug, info, trace};
 use socket2::{Domain, Type};
 use std::collections::HashMap;
 use std::fs::File;

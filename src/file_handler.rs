@@ -1,5 +1,6 @@
+#![allow(clippy::cast_possible_truncation)]
 use super::settings;
-use log::*;
+use log::{debug, error, info, trace, warn};
 use std::cmp;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -11,6 +12,7 @@ use std::path::Path;
 use std::time::Instant;
 use std::{fs, io};
 
+#[allow(clippy::too_many_lines)]
 pub(crate) fn write_to_disk(
     opened_buffers: &mut HashMap<String, settings::OpenedBuffer>,
     buffer_reader: &mut BufReader<&socket2::Socket>,
@@ -140,14 +142,13 @@ pub(crate) fn write_to_disk(
                     backup_fn.push("~");
                     backup_fn_canon.set_file_name(&backup_fn);
                     continue;
-                } else {
-                    warn!(
-                        "Cannot backup, Why there is a file named: {}",
-                        backup_fn_canon.display()
-                    );
-                    can_backup = false;
-                    break;
                 }
+                warn!(
+                    "Cannot backup, Why there is a file named: {}",
+                    backup_fn_canon.display()
+                );
+                can_backup = false;
+                break;
             }
 
             let mut backup = None;
@@ -175,7 +176,7 @@ pub(crate) fn write_to_disk(
                 .map_err(|e| {
                     Error::new(
                         ErrorKind::Other,
-                        format!("{}: {:?}", fn_canon.to_string_lossy(), e.to_string()),
+                        format!("{}: {:?}", fn_canon.to_string_lossy(), e),
                     )
                 })?;
             let mut temp_file = File::try_clone(&opened_buffer.temp_file)?;
@@ -251,6 +252,7 @@ pub(crate) fn get_requested_buffers(
 
     // Iterate over all files and create bookkeeping info
     for (idx, file) in settings.files.iter().enumerate() {
+        #[allow(clippy::if_not_else)]
         let filename_canon = if !settings.create {
             canonicalize(file).map_err(|e| e.to_string())?
         } else {
@@ -259,7 +261,7 @@ pub(crate) fn get_requested_buffers(
                 Err(e) => match e.kind() {
                     ErrorKind::NotFound => {
                         info!("Creating new empty file: {:?}", &file);
-                        let _ = File::create(file).map_err(|e| e.to_string())?;
+                        let _r = File::create(file).map_err(|e| e.to_string())?;
                         canonicalize(file).map_err(|e| e.to_string())?
                     }
                     _ => return Err(e.to_string()),
@@ -271,6 +273,7 @@ pub(crate) fn get_requested_buffers(
             }
         };
 
+        #[allow(clippy::needless_late_init)]
         let file_name_string;
         if settings.names.len() > idx {
             file_name_string = settings.names[idx].clone();

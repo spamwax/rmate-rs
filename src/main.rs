@@ -1,5 +1,5 @@
 use fork::{fork, Fork};
-use log::*;
+use log::{debug, error, trace};
 use std::collections::HashMap;
 use std::env;
 use std::io::{BufRead, BufReader, Error, ErrorKind};
@@ -13,7 +13,11 @@ use structopt::StructOpt;
 
 // TODO: Build universal binary for macos on github actions.
 // TODO: Put the upload/download/release section of github actions into a separate reusable
-// workflow that each step in release.yml calls it with different input parameters.
+//       workflow that each step in release.yml calls it with different input parameters.
+// TODO: Investigate the type (u64, u32, ...) that file IO functions (such as fs::copy) return on other platforms.
+//       We can then remove clippy::cast_possible_truncation from file_handler.rs
+// TODO: Flip how the setting for creating non-existing files work so by default it doesn't create
+//       new empty files.<18-07-22, hamid> //
 
 #[allow(clippy::option_map_unit_fn)]
 fn main() -> Result<(), String> {
@@ -68,7 +72,7 @@ fn main() -> Result<(), String> {
     }
 
     // Wait for save/close instructions from remote and handle them
-    handle_remote(socket, buffers).map_err(|e| e.to_string())?;
+    handle_remote(&socket, buffers).map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -92,7 +96,7 @@ fn run_fork() -> Result<bool, String> {
 }
 
 fn handle_remote(
-    socket: socket2::Socket,
+    socket: &socket2::Socket,
     mut opened_buffers: HashMap<String, OpenedBuffer>,
 ) -> Result<(), std::io::Error> {
     let mut total = 0;
@@ -102,7 +106,7 @@ fn handle_remote(
     let bsize = socket.recv_buffer_size()? * 2;
     trace!("socket recv size: {}", bsize);
 
-    let mut buffer_reader = BufReader::with_capacity(bsize, &socket);
+    let mut buffer_reader = BufReader::with_capacity(bsize, socket);
     // Wait for commands from remote app
     // let mut line = Vec::<u8>::with_capacity(64);
     while buffer_reader.read_line(&mut myline)? != 0 {
@@ -130,10 +134,9 @@ fn handle_remote(
                 if myline.trim() == "" {
                     trace!("<-- Recvd empty line from editor");
                     continue;
-                } else {
-                    error!("***===*** Unrecognized shit: {:?}", myline.trim());
-                    return Err(Error::new(ErrorKind::Other, "unrecognized shit"));
                 }
+                error!("***===*** Unrecognized shit: {:?}", myline.trim());
+                return Err(Error::new(ErrorKind::Other, "unrecognized shit"));
             }
         }
     }

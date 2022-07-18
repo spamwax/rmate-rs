@@ -1,4 +1,5 @@
-use log::*;
+#![allow(clippy::module_name_repetitions)]
+use log::trace;
 use serde::Deserialize;
 use std::ffi::OsString;
 use std::fs::canonicalize;
@@ -99,7 +100,7 @@ pub(crate) fn read_disk_settings() -> (String, u16) {
                 canonicalize(path)
             }
         })
-        .filter(|canon| canon.is_ok())
+        .filter(Result::is_ok)
         .map(|canon| {
             let path = canon.unwrap();
             let fname = &Path::new(&path);
