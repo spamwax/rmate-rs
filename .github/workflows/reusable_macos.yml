@@ -69,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
         with:
-          name: upload-binary-artifact
+          name: binary-artifact-${{ inputs.target }}
           path: |
             rmate_${{ inputs.target }}.zip
           if-no-files-found: warn
