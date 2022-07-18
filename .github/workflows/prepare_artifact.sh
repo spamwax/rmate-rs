@@ -11,6 +11,7 @@ create_linux() {
   elif [[ $TARGET == *"arm"* ]]; then
     strip_cmd="/usr/bin/arm-linux-gnueabi-strip"
   fi
+  ls "/usr/bin/*strip*" || true
   cp target/"$TARGET/$BUILD_TYPE"/rmate . || true
   "$strip_cmd" rmate || true
   tar czvf "$artifacts" rmate
