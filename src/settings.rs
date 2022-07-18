@@ -23,11 +23,11 @@ pub(crate) const RMATE_PORT: u16 = 52698;
 )]
 pub(crate) struct Settings {
     /// Connect to HOST. Use 'auto' to detect the host from SSH.
-    /// Defalts to localhost
+    /// Defaults to localhost
     #[structopt(short = "H", long = "--host", env = "RMATE_HOST", name = "HOST")]
     pub host: Option<String>,
 
-    /// Port number to use for connection. Defalts to 52698
+    /// Port number to use for connection. Defaults to 52698
     #[structopt(short, long, env = "RMATE_PORT", min_values = 1)]
     pub port: Option<u16>,
 

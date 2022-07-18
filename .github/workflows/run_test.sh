@@ -33,6 +33,7 @@ if [[ -n "$USE_CROSS" && "$USE_CROSS" == "true" ]]; then
     fi
     printf "\n\n\n"
     sleep 2
+    cat ./output.log
     exit 0
 fi
 
@@ -77,6 +78,7 @@ if [[ -z "$ARM" || "$ARM" == 'false' ]]; then
     fi
     printf "\n\n\n"
     sleep 2
+    cat ./output.log
 else # Use qemu to run ARM-based binaries for Linux OS.
     if [[ "$TARGET" == "aarch64-unknown-linux-gnu" ]]; then
         libpath="/usr/aarch64-linux-gnu"
@@ -98,5 +100,6 @@ else # Use qemu to run ARM-based binaries for Linux OS.
     fi
     printf "\n\n\n"
     sleep 2
+    cat ./output.log
 fi
 
