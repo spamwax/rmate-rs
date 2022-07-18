@@ -6,7 +6,7 @@ fast, reliable implementation of **rmate** in Rust.
 
 Pre-complied binaries for following platforms are available in [Releases page](https://github.com/listboss/rmate-rust/releases).
 
-| Platform |                                                |
+| Platform | CPU Architecture                               |
 |----------|------------------------------------------------|
 | macOS    | x86_64, aarch64                                |
 | Linux    | x86_64, i686, aarch64, armv7                   |
