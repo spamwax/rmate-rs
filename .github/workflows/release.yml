@@ -57,13 +57,25 @@ jobs:
     steps:
       - uses: actions/download-artifact@v2
         with:
-          name: upload-binary-artifact
+          name: binary-artifact-x86_64-linux
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-i686-linux
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-aarch64-linux
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-arm-linux
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-macos
       - uses: softprops/action-gh-release@v1
         with:
           fail_on_unmatched_files: false
           files: |
-            rmate_${{ inputs.target }}.zip
-            rmate_${{ inputs.target }}.tar.gz
+            rmate_*.tar.gz
+            rmate_*.zip
 
 
 
