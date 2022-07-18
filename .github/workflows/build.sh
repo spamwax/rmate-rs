@@ -11,5 +11,5 @@ if [[ "$BUILD_TYPE" == "release" ]]; then
     build_type="--release"
 fi
 
-$cargo_runner --target "$TARGET" $build_type
+$cargo_runner build --target "$TARGET" $build_type
 
