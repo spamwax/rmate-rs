@@ -56,7 +56,7 @@ if [[ -z "$ARM" || "$ARM" == 'false' ]]; then
         cat ./output.log
         exit 1
     fi
-    if pcregrep -q -M 'host: Some\(\n\s+"localhost",\n\s+\),\n\s+port: Some\(\n\s+55555,\n\s+\),' ./output.log; then
+    if ! pcregrep -q -M 'host: Some\(\n\s+"localhost",\n\s+\),\n\s+port: Some\(\n\s+55555,\n\s+\),' ./output.log; then
         cat ./output.log
         exit 1
     fi
@@ -85,7 +85,7 @@ else # Use qemu to run ARM-based binaries for Linux OS.
         cat ./output.log
         exit 1
     fi
-    if grep -q "Read disk settings-> { host: Some(" ./output.log; then
+    if ! grep -q "Read disk settings-> { host: Some(" ./output.log; then
         cat ./output.log
         exit 1
     fi
