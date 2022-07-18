@@ -47,18 +47,6 @@ jobs:
       - name: Build (${{ inputs.build_type }})
         run: .github/workflows/build.sh
 
-      # - name: Build binary (debug)
-      #   if: ${{ inputs.build_type == 'debug' }}
-      #   uses: actions-rs/cargo@v1
-      #   with:
-      #     command: build
-      #     args: --target ${{ inputs.target }}
-      # - name: Build binary (release)
-      #   if: ${{ inputs.build_type == 'release' }}
-      #   uses: actions-rs/cargo@v1
-      #   with:
-      #     command: build
-      #     args: --target ${{ inputs.target }} --release
       - name: Run test
         if: ${{ inputs.run_tests }}
         run: .github/workflows/run_test.sh

@@ -77,3 +77,43 @@ jobs:
       build_type: 'debug'
       run_tests: true
       cross: true
+  i686-linux-android:
+    if: ${{ github.ref_type != 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'i686-linux-android'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
+  aarch64-linux-android:
+    if: ${{ github.ref_type != 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'aarch64-linux-android'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
+  armv7-linux-android:
+    if: ${{ github.ref_type != 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'armv7-linux-androideabi'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
+  arm-linux-android:
+    if: ${{ github.ref_type != 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'arm-linux-androideabi'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
+  thumbv7neon-linux-android:
+    if: ${{ github.ref_type != 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'thumbv7neon-linux-androideabi'
+      build_type: 'debug'
+      run_tests: true
+      cross: true

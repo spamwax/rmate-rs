@@ -73,6 +73,50 @@ jobs:
       build_type: 'release'
       run_tests: false
       cross: true
+  i686-linux-android:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'i686-linux-android'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  aarch64-linux-android:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'aarch64-linux-android'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  armv7-linux-android:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'armv7-linux-androideabi'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  arm-linux-android:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'arm-linux-androideabi'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  thumbv7neon-linux-android:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'thumbv7neon-linux-androideabi'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+
+
+
+
 
   gh_release:
     name: Release rmate
@@ -103,6 +147,21 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: binary-artifact-x86_64-linux-android
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-i686-linux-android
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-aarch64-linux-android
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-armv7-linux-androideabi
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-arm-linux-androideabi
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-thumbv7neon-linux-androideabi
       - run: ls -la /home/runner/work/rmate-rs/rmate-rs || true
       - uses: softprops/action-gh-release@v1
         with:
