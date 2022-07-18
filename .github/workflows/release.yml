@@ -57,19 +57,19 @@ jobs:
     steps:
       - uses: actions/download-artifact@v2
         with:
-          name: binary-artifact-x86_64-linux
+          name: binary-artifact-x86_64-unknown-linux-gnu
       - uses: actions/download-artifact@v2
         with:
-          name: binary-artifact-i686-linux
+          name: binary-artifact-i686-unknown-linux-gnu
       - uses: actions/download-artifact@v2
         with:
-          name: binary-artifact-aarch64-linux
+          name: binary-artifact-aarch64-unknown-linux-gnu
       - uses: actions/download-artifact@v2
         with:
-          name: binary-artifact-arm-linux
+          name: binary-artifact-armv7-unknown-linux-gnu
       - uses: actions/download-artifact@v2
         with:
-          name: binary-artifact-macos
+          name: binary-artifact-x86_64-apple-darwin
       - uses: softprops/action-gh-release@v1
         with:
           fail_on_unmatched_files: false
