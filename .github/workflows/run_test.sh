@@ -13,6 +13,7 @@ port: 52698
 unixsocket: ~/.rmate.socket
 EOB
 
+export RUST_LOG=trace
 sleep 2
 
 echo "Running tests using target/${GREEN}$TARGET${NC}/debug/rmate"; echo
