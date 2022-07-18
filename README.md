@@ -1,4 +1,5 @@
 [![Test & Release binaries](https://github.com/spamwax/rmate-rs/actions/workflows/release.yml/badge.svg)](https://github.com/spamwax/rmate-rs/actions/workflows/release.yml)
+[![tests](https://github.com/spamwax/rmate-rs/actions/workflows/main.yml/badge.svg?branch=develop)](https://github.com/spamwax/rmate-rs/actions/workflows/main.yml)
 
 # rmate ♥ Rust
 
