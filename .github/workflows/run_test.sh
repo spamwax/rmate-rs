@@ -21,7 +21,7 @@ file "$binary_path"
 
 # use cross if building on special platforms
 if [[ -n "$USE_CROSS" && "$USE_CROSS" == "true" ]]; then
-    echo "${GREEN}$TARGET${NC} binary ${RED}cannot be executed${NC} on Linux. Use Rust's cross."
+    echo "Running ${GREEN}$TARGET${NC} binary under docker. (Using Rust's cross)"
     # Show help message
     cross run --target "$TARGET" -- --help || echo
     # Test with local .rmate.rc
