@@ -27,7 +27,7 @@ env:
   RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
 
 jobs:
-  build_binary:
+  build:
     name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
     strategy:
       matrix:

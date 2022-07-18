@@ -69,7 +69,7 @@ jobs:
   gh_release:
     name: Release rmate
     runs-on: ubuntu-latest
-    needs: [x86_64-linux, i686-linux, aarch64-linux, armv7-linux, macos]
+    needs: [x86_64-linux, i686-linux, aarch64-linux, armv7-linux, x86_64-macos, aarch64-macos, x86_64-illumos]
     steps:
       - uses: actions/download-artifact@v2
         with:
