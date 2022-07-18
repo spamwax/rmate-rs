@@ -69,3 +69,11 @@ jobs:
       build_type: 'debug'
       run_tests: true
       cross: true
+  x86_64-linux-android:
+    if: ${{ github.ref_type != 'tag' }}
+    uses: ./.github/workflows/reusable_linux.yml
+    with:
+      target: 'x86_64-linux-android'
+      build_type: 'debug'
+      run_tests: true
+      cross: true

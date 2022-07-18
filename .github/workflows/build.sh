@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
 if [[ -z "$USE_CROSS" || "$USE_CROSS" == "false" ]]; then
-    cargo build --target "$TARGET" "--$BUILD_TYPE"
+    cargo_runner="cargo"
 else
-    cross build --target "$TARGET" "--$BUILD_TYPE"
+    cargo_runner="cross"
 fi
+
+build_type=
+if [[ "$BUILD_TYPE" == "release" ]]; then
+    build_type="--release"
+fi
+
+$cargo_runner --target "$TARGET" $build_type
+
