@@ -9,7 +9,7 @@ create_linux() {
   if [[ $TARGET == *"aarch64"* ]]; then
     strip_cmd="/usr/bin/aarch64-linux-gnu-strip"
   elif [[ $TARGET == *"arm"* ]]; then
-    strip_cmd="/usr/bin/arm-linux-gnueabi-strip"
+    strip_cmd="/usr/bin/arm-linux-gnueabihf-strip"
   fi
   ls "/usr/bin/*strip*" || true
   which "arm-linux-gnu-strip" || true

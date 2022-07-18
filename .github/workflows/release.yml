@@ -43,13 +43,21 @@ jobs:
       arm: true
       build_type: 'release'
       run_tests: false
-  macos:
+  x86_64-macos:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_macos.yml
     with:
       target: 'x86_64-apple-darwin'
       build_type: 'release'
       run_tests: false
+  aarch64-macos:
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+    uses: ./.github/workflows/reusable_macos.yml
+    with:
+      target: 'aarch64-apple-darwin'
+      build_type: 'release'
+      run_tests: false
+
   gh_release:
     name: Release rmate
     runs-on: ubuntu-latest
@@ -70,6 +78,9 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: binary-artifact-x86_64-apple-darwin
+      - uses: actions/download-artifact@v2
+        with:
+          name: binary-artifact-aarch64-apple-darwin
       - run: ls -la /home/runner/work/rmate-rs/rmate-rs || true
       - uses: softprops/action-gh-release@v1
         with:

@@ -47,12 +47,17 @@ jobs:
       arm: true
       build_type: 'debug'
       run_tests: true
-  macos:
+  x86_64-macos:
     if: ${{ github.ref_type != 'tag' }}
     uses: ./.github/workflows/reusable_macos.yml
     with:
       target: 'x86_64-apple-darwin'
       build_type: 'debug'
       run_tests: true
-
-
+  aarch64-macos:
+    if: ${{ github.ref_type != 'tag' }}
+    uses: ./.github/workflows/reusable_macos.yml
+    with:
+      target: 'aarch64-apple-darwin'
+      build_type: 'debug'
+      run_tests: true
