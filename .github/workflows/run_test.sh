@@ -66,19 +66,18 @@ else
         arm_runner="qemu-arm-static"
     fi
     ls -l "$libpath"
+    ls -l "$libpath/lib64/*" || true
+    ls -l "$libpath/lib/*" || true
     echo $(which $arm_runner)
     # $arm_runner --help || true
     # $arm_runner -v || true
+    $arm_runner -L $libpath --help
     $arm_runner -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log
-    echo "exit code: $?"
-    $arm_runner "$binary_path" -vvv -w Cargo.toml 2>output.log
-    echo "exit code: $?"
+    echo "exit code: $?\n"
     cat output.log || true
     sleep 2
     grep "Connection refused (os error " ./output.log
-    echo "exit code: $?\n"
     grep "Read disk settings-> { host: Some(" ./output.log
-    echo "exit code: $?\n"
     printf "\n\n\n"
     sleep 2
 fi
