@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -ex
 
 if [[ -z "$USE_CROSS" || "$USE_CROSS" == "false" ]]; then
     cargo_runner="cargo"

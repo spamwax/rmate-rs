@@ -67,7 +67,7 @@ jobs:
     with:
       target: 'x86_64-unknown-illumos'
       build_type: 'debug'
-      run_tests: true
+      run_tests: false
       cross: true
   x86_64-linux-android:
     if: ${{ github.ref_type != 'tag' }}

@@ -26,7 +26,7 @@ if [[ -n "$USE_CROSS" && "$USE_CROSS" == "true" ]]; then
     # Test with local .rmate.rc
     cross run --target "$TARGET" -- -vvv -w Cargo.toml 2>output.log || echo
     grep "Connection refused (os error " ./output.log
-    grep "Read disk settings-> { host: Some(" ./output.log
+    cat output.log
     printf "\n\n\n"
     sleep 2
     exit 0
