@@ -36,7 +36,7 @@ pub(crate) struct Settings {
     pub wait: bool,
 
     /// Open even if file is not writable.
-    /// This flag willl affect all files
+    /// This flag will affect all files
     #[structopt(short, long)]
     pub force: bool,
 
