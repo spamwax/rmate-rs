@@ -12,8 +12,7 @@ pub(crate) fn connect_to_editor(
     let socket = socket2::Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
 
     debug!("Host: {}", settings.host.as_ref().unwrap());
-    let host = settings.host.as_ref().unwrap();
-    let addr_srv = if host == "localhost" {
+    let addr_srv = if settings.host.as_ref().unwrap() == "localhost" {
         IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
     } else {
         settings
@@ -23,8 +22,7 @@ pub(crate) fn connect_to_editor(
             .parse::<IpAddr>()
             .map_err(|e| Error::new(ErrorKind::AddrNotAvailable, e.to_string()))?
     };
-    let port = settings.port.unwrap();
-    let addr_srv = std::net::SocketAddr::new(addr_srv, port).into();
+    let addr_srv = std::net::SocketAddr::new(addr_srv, settings.port.unwrap()).into();
 
     debug!("About to connect to {:?}", addr_srv);
     socket.connect(&addr_srv)?;
