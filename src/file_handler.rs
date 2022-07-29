@@ -21,11 +21,17 @@ pub(crate) fn write_to_disk(
     let mut myline = String::with_capacity(128);
 
     buffer_reader.read_line(&mut myline)?;
-    trace!("  save instruction:\t{:?}", myline.trim());
+    trace!("Save instruction received:\t{:?}", myline.trim());
     let token = myline.trim().rsplitn(2, ':').collect::<Vec<&str>>()[0]
         .trim()
         .to_string();
-    trace!("  token: >{}<", token);
+    trace!("  extracted token: >{}<", token);
+    let filename = opened_buffers
+        .get(&token)
+        .unwrap()
+        .canon_path
+        .to_string_lossy()
+        .into_owned();
     myline.clear();
     let read_only = !opened_buffers.get(&token).unwrap().canwrite;
     if read_only {
@@ -50,34 +56,35 @@ pub(crate) fn write_to_disk(
 
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
         // Remote editor may send multiple "data: SIZE" sections under one "save" command
+
+        trace!("-> About to receive & save {}", filename);
         loop {
             buffer_reader.read_line(&mut myline)?;
             if myline.trim().is_empty() {
-                trace!("<- breaking out of write_to_disk");
+                trace!(" breaking out of write_to_disk");
                 break;
             }
-            trace!("->  save instruction:\t{:?}", myline.trim());
             assert!(myline.trim().contains("data: "));
             no_data_chunks += 1;
             let data_size = myline.rsplitn(2, ':').collect::<Vec<&str>>()[0]
                 .trim()
                 .parse::<usize>()
                 .unwrap();
-            trace!("  save size:\t{:?}", data_size);
+            trace!(" save size:\t{:?}", data_size);
             myline.clear();
 
             let mut total = 0usize;
             let reader_len = buffer_reader.buffer().len();
-            trace!("  reader len: {}", reader_len);
+            trace!(" reader buffer len: {}", reader_len);
 
             let mut buffer = vec![0u8; cmp::max(buffer_reader.buffer().len(), buf_size)];
             let mut chunk_reader = buffer_reader.take(data_size as u64);
-            trace!("  buffer len: {}", buffer.len());
+            trace!(" actual buffer len: {}", buffer.len());
             loop {
                 let n = chunk_reader.read(&mut buffer)?;
                 if n == 0 {
                     total_written += total;
-                    trace!("  total_written = {}", total_written);
+                    trace!("   total_written = {}", total_written);
                     buf_writer.flush()?;
                     break;
                 }
@@ -87,7 +94,7 @@ pub(crate) fn write_to_disk(
                 }
                 total += n;
                 trace!(
-                    "   - received : {} of {} bytes (chunk size: {})",
+                    "   - so far received {} of {} bytes (chunk size: {})",
                     total,
                     data_size,
                     n
@@ -95,15 +102,16 @@ pub(crate) fn write_to_disk(
             }
         }
     }
+    trace!("<- Finished saving received file to a temp location.");
     let t2 = Instant::now();
     let elapsed = t2 - t1;
     debug!(
-        " * time spent reading/writing data: {} micros ({} chunks of save)",
+        "Time spent reading/writing data: {} micros ({} chunks of save)",
         elapsed.as_micros(),
         no_data_chunks
     );
 
-    debug!("Bytes transferred: {}", total_written);
+    debug!("  bytes transferred: {}", total_written);
     // Open the file we are supposed to actuallly save to, and copy
     // content of temp. file to it. ensure we only write number of bytes that
     // Sublime Text has sent us.

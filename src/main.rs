@@ -123,7 +123,7 @@ fn handle_remote(
             }
             // save the buffer to a file
             "save" => {
-                trace!("--> About to call write_to_disk()");
+                trace!("-> About to call write_to_disk()");
                 myline.clear();
                 match file_handler::write_to_disk(&mut opened_buffers, &mut buffer_reader, bsize) {
                     Ok(n) => total += n,
