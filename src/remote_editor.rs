@@ -103,14 +103,14 @@ pub(crate) fn open_file_in_remote(
                 let length = buffer.len();
                 if length == 0 {
                     debug!(
-                        "read & sent all of input file: {}",
+                        "no more data could be read from: {}",
                         opened_buffer.canon_path.to_string_lossy()
                     );
                     break;
                 }
                 total += length;
                 buf_writer.write_all(buffer).map_err(|e| e.to_string())?;
-                trace!("  sent {} / {}", length, total);
+                trace!("  wrote {} / {} to buffer", length, total);
                 buf_reader.consume(length);
             }
             // Signal we are done sending this file

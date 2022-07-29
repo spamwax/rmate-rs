@@ -56,7 +56,7 @@ pub(crate) fn write_to_disk(
                 trace!("<- breaking out of write_to_disk");
                 break;
             }
-            trace!("-->  save instruction:\t{:?}", myline.trim());
+            trace!("->  save instruction:\t{:?}", myline.trim());
             assert!(myline.trim().contains("data: "));
             no_data_chunks += 1;
             let data_size = myline.rsplitn(2, ':').collect::<Vec<&str>>()[0]
@@ -87,7 +87,7 @@ pub(crate) fn write_to_disk(
                 }
                 total += n;
                 trace!(
-                    "   - transferred so far: {}/{}-byte (chunk: {})",
+                    "   - received : {} of {} bytes (chunk size: {})",
                     total,
                     data_size,
                     n
@@ -324,7 +324,8 @@ pub(crate) fn get_requested_buffers(
         let hashed_fn = hasher.finish();
         trace!("hashed_fn (token): {:x}", hashed_fn);
         if let Some(v) = buffers.insert(
-            hashed_fn.to_string(),
+            // hashed_fn.to_string(),
+            format!("{:x}", hashed_fn),
             settings::OpenedBuffer {
                 canon_path: filename_canon,
                 // display_name: file_name_string.clone(),
