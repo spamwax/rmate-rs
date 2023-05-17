@@ -1,7 +1,6 @@
 #![allow(clippy::cast_possible_truncation)]
 use super::settings;
 use log::{debug, error, info, trace, warn};
-use std::cmp;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::fs::File;
@@ -10,6 +9,7 @@ use std::hash::{Hash, Hasher};
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Write};
 use std::path::Path;
 use std::time::Instant;
+use std::{cmp, format};
 use std::{fs, io};
 
 #[allow(clippy::too_many_lines)]
@@ -209,7 +209,7 @@ pub(crate) fn write_to_disk(
                 error!("  Remote changes are not applied.");
                 // If saving didn't succeed, we try to restore from backup
                 if let Some(backup_fn) = backup {
-                    match fs::copy(&backup_fn, &fn_canon) {
+                    match fs::copy(&backup_fn, fn_canon) {
                         // Restored from backup, but changes sent from remote were not applied
                         // Inform the user
                         Ok(_) => trace!(
@@ -333,7 +333,7 @@ pub(crate) fn get_requested_buffers(
         trace!("hashed_fn (token): {:x}", hashed_fn);
         if let Some(v) = buffers.insert(
             // hashed_fn.to_string(),
-            format!("{:x}", hashed_fn),
+            format!("{hashed_fn:x}"),
             settings::OpenedBuffer {
                 canon_path: filename_canon,
                 // display_name: file_name_string.clone(),

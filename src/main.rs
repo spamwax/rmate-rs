@@ -19,7 +19,6 @@ use structopt::StructOpt;
 // TODO: Flip how the setting for creating non-existing files work so by default it doesn't create
 //       new empty files.<18-07-22, hamid> //
 
-#[allow(clippy::option_map_unit_fn)]
 fn main() -> Result<(), String> {
     // Read settings from cmd line arguments
     let mut settings = Settings::from_args();
@@ -52,7 +51,7 @@ fn main() -> Result<(), String> {
             conn.split(' ').take(1).next().unwrap().to_string()
         });
         trace!("  from SSH_CONNECTION: {}", auto_host);
-        settings.host.as_mut().map(|host| *host = auto_host);
+        settings.host.replace(auto_host);
     }
 
     trace!("rmate settings: {:#?}", settings);
@@ -90,7 +89,7 @@ fn run_fork() -> Result<bool, String> {
         }
         Err(e) => {
             error!("{}", e.to_string());
-            Err(format!("OS Error no. {}", e))
+            Err(format!("OS Error no. {e}"))
         }
     }
 }

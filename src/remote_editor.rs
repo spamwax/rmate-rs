@@ -93,7 +93,7 @@ pub(crate) fn open_file_in_remote(
             buf_writer.flush().map_err(|e| e.to_string())?;
 
             if let Some(filetype) = &opened_buffer.filetype {
-                writeln!(&mut buf_writer, "file-type: {}", filetype).map_err(|e| e.to_string())?;
+                writeln!(&mut buf_writer, "file-type: {filetype}").map_err(|e| e.to_string())?;
                 debug!("file-type: {}", filetype);
             }
             writeln!(&mut buf_writer, "data: {}", opened_buffer.size).map_err(|e| e.to_string())?;
