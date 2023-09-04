@@ -62,7 +62,7 @@ fn main() -> Result<(), String> {
     let buffers = file_handler::get_requested_buffers(&settings)?;
     // Send the files to remote editor
     // let buffers = remote_editor::open_file_in_remote(&socket, buffers)?;
-    remote_editor::open_file_in_remote(&socket, &buffers)?;
+    remote_editor::open_file_in_remote(&socket, &buffers, &settings)?;
 
     // If needed, fork so we yield the control back to terminal
     if !settings.wait && run_fork()? {

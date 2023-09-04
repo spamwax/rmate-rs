@@ -56,6 +56,7 @@ pub(crate) fn close_buffer(
 pub(crate) fn open_file_in_remote(
     socket: &socket2::Socket,
     buffers: &HashMap<String, settings::OpenedBuffer>,
+    settings: &settings::Settings,
 ) -> Result<(), String> {
     // ) -> Result<HashMap<String, settings::OpenedBuffer>, String> {
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
@@ -77,13 +78,14 @@ pub(crate) fn open_file_in_remote(
                     "open\ndisplay-name: {}\n",
                     "real-path: {}\n",
                     "selection: {}\n",
-                    "data-on-save: yes\nre-activate: yes\n",
+                    "data-on-save: yes\nre-activate: {}\n",
                     "token: {}\n",
                 ),
                 // host_name.to_string_lossy(),
                 opened_buffer.display_name.to_string_lossy(),
                 opened_buffer.canon_path.to_string_lossy(),
                 opened_buffer.line,
+                if settings.keep { "yes" } else { "no" },
                 token
             );
             trace!("header: {}", header);
