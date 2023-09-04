@@ -65,7 +65,7 @@ pub(crate) fn open_file_in_remote(
 
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, socket);
-        for (token, opened_buffer) in buffers.iter() {
+        for (token, opened_buffer) in buffers {
             // For each buffer get the header values:
             // - display-name
             // - real-path
