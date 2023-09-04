@@ -47,11 +47,11 @@ if [[ -z "$ARM" || "$ARM" == 'false' ]]; then
     $binary_path -vvv -w Cargo.toml 2>output.log || echo
     if ! grep -q "Connection refused (os error " ./output.log; then
         cat ./output.log
-        exit 1
+        exit 2
     fi
     if ! grep -q "Read disk settings-> { host: Some(" ./output.log; then
         cat ./output.log
-        exit 1
+        exit 3
     fi
     printf "\n\n\n"
     sleep 2
@@ -62,19 +62,25 @@ if [[ -z "$ARM" || "$ARM" == 'false' ]]; then
     $binary_path -vvv -w Cargo.toml 2>output.log || echo
     if ! grep -q "Connection refused (os error " ./output.log; then
         cat ./output.log
-        exit 1
+        exit 4
     fi
-    if ! pcregrep -q -M 'host: Some\(\n\s+"localhost",\n\s+\),\n\s+port: Some\(\n\s+55555,\n\s+\),' ./output.log; then
+    PCGREP=
+    if [[ $TARGET == *"apple"* ]]; then
+        PCGREP=pcre2grep
+    else
+        PCGREP=pcregrep
+    fi
+    if ! "$PCGREP" -q -M 'host: Some\(\n\s+"localhost",\n\s+\),\n\s+port: Some\(\n\s+55555,\n\s+\),' ./output.log; then
         cat ./output.log
-        exit 1
+        exit 5
     fi
     if ! grep -q "Finding host automatically from SSH_CONNECTION" ./output.log; then
         cat ./output.log
-        exit 1
+        exit 6
     fi
     if ! grep -q "from SSH_CONNECTION: localhost" ./output.log; then
         cat ./output.log
-        exit 1
+        exit 7
     fi
     printf "\n\n\n"
     sleep 2
@@ -92,11 +98,11 @@ else # Use qemu to run ARM-based binaries for Linux OS.
     $arm_runner -L $libpath "$binary_path" -vvv -w Cargo.toml 2>output.log
     if ! grep -q "Connection refused (os error " ./output.log; then
         cat ./output.log
-        exit 1
+        exit 8
     fi
     if ! grep -q "Read disk settings-> { host: Some(" ./output.log; then
         cat ./output.log
-        exit 1
+        exit 9
     fi
     printf "\n\n\n"
     sleep 2
