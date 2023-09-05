@@ -31,7 +31,8 @@ elif [ -n "$CIRRUS_TAG" ]; then
     if [ -z "$GITHUB_TOKEN" ]; then
         echo "Github access token not set, exitting."
     else
-        echo "This is a tagged commit, running deploy.sh"
+        echo "This is a tagged commit, running deploy.sh in 8 minutes!"
+        sleep 480
         main
     fi
 else
