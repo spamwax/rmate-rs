@@ -22,3 +22,15 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+
+branches:
+  only:
+    # release tags
+    - /^v?\d+\.\d+\.\d+.*$/
+    - master
+    - develop
+
+notifications:
+  email:
+    on_success: never
+
