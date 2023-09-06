@@ -124,8 +124,8 @@ pub(crate) fn open_file_in_remote(
             }
             // Signal we are done sending this file
             let _n = buf_writer
-                .write_fmt(format_args!("\n.\n"))
-                .map_err(|e| e.to_string());
+                .write_fmt(format_args!("\n"))
+                .map_err(|e| e.to_string())?;
             buf_writer.flush().map_err(|e| e.to_string())?;
             debug!("  os-reported file size: {}", opened_buffer.size);
             debug!("  actual bytes read: {}", total);
@@ -134,6 +134,8 @@ pub(crate) fn open_file_in_remote(
                 opened_buffer.canon_path
             );
         }
+        let _n = buf_writer.write_fmt(format_args!(".\n")).map_err(|e| e.to_string())?;
+        buf_writer.flush().map_err(|e| e.to_string())?;
     }
 
     let mut b = [0u8; 512];
