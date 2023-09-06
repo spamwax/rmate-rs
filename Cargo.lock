@@ -438,7 +438,7 @@ checksum = "dbb5fb1acd8a1a18b3dd5be62d25485eb770e05afb408a9627d14d451bae12da"
 
 [[package]]
 name = "rmate"
-version = "1.1.21"
+version = "1.1.22"
 dependencies = [
  "dirs",
  "env_logger",
