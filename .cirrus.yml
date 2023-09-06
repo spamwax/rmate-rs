@@ -9,7 +9,8 @@ task:
     BASH_CMD: /usr/local/bin/bash
     CIRRUS_CLONE_DEPTH: "1"
     HOME: /tmp
-    GITHUB_TOKEN: ENCRYPTED[55d85e93395da1a857ca233ddfda63e0b2c8456c137ad31f20a9c9748e8f2618ab41a4891a119c3be68d1c7c748fba6c]
+    # GITHUB_TOKEN: ENCRYPTED[55d85e93395da1a857ca233ddfda63e0b2c8456c137ad31f20a9c9748e8f2618ab41a4891a119c3be68d1c7c748fba6c]
+    GITHUB_TOKEN: ENCRYPTED[2d0731e2e4a34f8a167b903cb1f75186a869c085256bc221c24d9628d6e3a54009cce545a0a0b003e650661d61c62d3c]
   install_deps_script:
     - pkg install -y curl go git bash
   install_ghr_script:
