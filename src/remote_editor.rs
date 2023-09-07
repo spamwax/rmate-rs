@@ -85,7 +85,7 @@ pub(crate) fn open_file_in_remote(
                 opened_buffer.display_name.to_string_lossy(),
                 opened_buffer.canon_path.to_string_lossy(),
                 opened_buffer.line,
-                if ! settings.keep { "yes" } else { "no" },
+                if settings.keep { "no" } else { "yes" },
                 token
             );
             trace!("header: {}", header);
@@ -122,10 +122,8 @@ pub(crate) fn open_file_in_remote(
                 trace!("  sent a chunk of {} bytes to remote editor", length);
                 buf_reader.consume(length);
             }
-            // Signal we are done sending this file
-            let _n = buf_writer
-                .write_fmt(format_args!("\n"))
-                .map_err(|e| e.to_string())?;
+            // Signal we are done sending this file by writing \n to buffer.
+            writeln!(&mut buf_writer).map_err(|e| e.to_string())?;
             buf_writer.flush().map_err(|e| e.to_string())?;
             debug!("  os-reported file size: {}", opened_buffer.size);
             debug!("  actual bytes read: {}", total);
@@ -134,7 +132,7 @@ pub(crate) fn open_file_in_remote(
                 opened_buffer.canon_path
             );
         }
-        let _n = buf_writer.write_fmt(format_args!(".\n")).map_err(|e| e.to_string())?;
+        writeln!(&mut buf_writer, ".").map_err(|e| e.to_string())?;
         buf_writer.flush().map_err(|e| e.to_string())?;
     }
 
