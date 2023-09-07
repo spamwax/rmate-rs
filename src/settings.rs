@@ -14,6 +14,7 @@ pub(crate) const RMATE_HOST: &str = "localhost";
 pub(crate) const RMATE_PORT: u16 = 52698;
 
 // program settings from command-line arguments and environment variables
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, StructOpt)]
 #[structopt(
     name = "rmate",

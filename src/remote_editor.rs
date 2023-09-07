@@ -85,7 +85,7 @@ pub(crate) fn open_file_in_remote(
                 opened_buffer.display_name.to_string_lossy(),
                 opened_buffer.canon_path.to_string_lossy(),
                 opened_buffer.line,
-                if ! settings.keep { "yes" } else { "no" },
+                if settings.keep { "no" } else { "yes" },
                 token
             );
             trace!("header: {}", header);
