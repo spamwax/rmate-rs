@@ -33,7 +33,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         rust: [stable]
-    runs-on: [self-hosted, Linux]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
         with:
