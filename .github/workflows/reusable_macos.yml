@@ -57,7 +57,7 @@ jobs:
           .github/workflows/prepare_artifact.sh
       - name: Upload for release
         id: upload_artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v2
         if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
         with:
           name: binary-artifact-${{ inputs.target }}
