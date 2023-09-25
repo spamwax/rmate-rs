@@ -31,7 +31,7 @@ jobs:
         rust: [stable]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install pcregrep
@@ -57,7 +57,7 @@ jobs:
           .github/workflows/prepare_artifact.sh
       - name: Upload for release
         id: upload_artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
         with:
           name: binary-artifact-${{ inputs.target }}
