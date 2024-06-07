@@ -32,7 +32,8 @@ pub(crate) struct Settings {
     #[structopt(short, long, env = "RMATE_PORT", min_values = 1)]
     pub port: Option<u16>,
 
-    /// Have TextMate retain window focus after file is closed
+    #[allow(clippy::doc_markdown)]
+    /// Have *TextMate* retain window focus after file is closed
     #[structopt(short, long)]
     pub keep: bool,
 
