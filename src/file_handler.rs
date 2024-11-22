@@ -294,7 +294,7 @@ pub(crate) fn get_requested_buffers(
 
         let mut line = String::with_capacity(128);
         if idx < settings.lines.len() {
-            line = settings.lines[idx].clone();
+            line.clone_from(&settings.lines[idx]);
         }
         let filetype: Option<String> = if idx < settings.filetypes.len() {
             Some(settings.filetypes[idx].clone())
@@ -364,7 +364,6 @@ pub(crate) fn get_requested_buffers(
 fn is_writable<P: AsRef<Path>>(p: P, md: &Metadata) -> bool {
     !md.permissions().readonly()
         && fs::OpenOptions::new()
-            .write(true)
             .append(true)
             .open(p)
             .is_ok()
