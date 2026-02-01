@@ -13,7 +13,7 @@ pub(crate) fn connect_to_editor(
 
     debug!("Host: {}", settings.host.as_ref().unwrap());
     let addr_srv = if settings.host.as_ref().unwrap() == "localhost" {
-        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
+        IpAddr::V4(Ipv4Addr::LOCALHOST)
     } else {
         settings
             .host

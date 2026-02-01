@@ -2,7 +2,7 @@ use fork::{fork, Fork};
 use log::{debug, error, trace};
 use std::collections::HashMap;
 use std::env;
-use std::io::{BufRead, BufReader, Error, ErrorKind};
+use std::io::{BufRead, BufReader, Error};
 
 mod file_handler;
 mod remote_editor;
@@ -135,7 +135,7 @@ fn handle_remote(
                     continue;
                 }
                 error!("***===*** Unrecognized shit: {:?}", myline.trim());
-                return Err(Error::new(ErrorKind::Other, "unrecognized shit"));
+                return Err(Error::other("unrecognized shit"));
             }
         }
     }

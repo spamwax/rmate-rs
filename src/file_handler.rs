@@ -132,7 +132,7 @@ pub(crate) fn write_to_disk(
     );
     opened_buffers
         .get_mut(&token)
-        .ok_or_else(|| Error::new(ErrorKind::Other, "can't find the open buffer for saving"))
+        .ok_or_else(|| Error::other("can't find the open buffer for saving"))
         .map(|opened_buffer| {
             // First we try to create a file name to be used as back up of original one
             let fn_canon = opened_buffer.canon_path.as_path();
@@ -181,12 +181,7 @@ pub(crate) fn write_to_disk(
                 .write(true)
                 .truncate(true)
                 .open(fn_canon)
-                .map_err(|e| {
-                    Error::new(
-                        ErrorKind::Other,
-                        format!("{}: {:?}", fn_canon.to_string_lossy(), e),
-                    )
-                })?;
+                .map_err(|e| Error::other(format!("{}: {:?}", fn_canon.to_string_lossy(), e)))?;
             let mut temp_file = File::try_clone(&opened_buffer.temp_file)?;
             temp_file.seek(SeekFrom::Start(0))?;
             let temp_reader_sized = temp_file.take(total_written as u64);
@@ -195,12 +190,8 @@ pub(crate) fn write_to_disk(
             let mut buffer_reader = BufReader::new(temp_reader_sized);
 
             // Copy from temp over main file (exactly total_written bytes)
-            let copy_result = io::copy(&mut buffer_reader, &mut buffer_writer).map_err(|e| {
-                Error::new(
-                    ErrorKind::Other,
-                    format!("{}: {:?}", fn_canon.to_string_lossy(), e),
-                )
-            });
+            let copy_result = io::copy(&mut buffer_reader, &mut buffer_writer)
+                .map_err(|e| Error::other(format!("{}: {:?}", fn_canon.to_string_lossy(), e)));
             if let Ok(cr) = copy_result {
                 buffer_writer.flush()?;
                 Ok((cr, fn_canon, backup))
@@ -349,7 +340,7 @@ pub(crate) fn get_requested_buffers(
                 "You are trying to open same files multiple time: {}",
                 v.canon_path.to_string_lossy().as_ref()
             );
-        };
+        }
     }
     trace!("All opened buffers:\n{:#?}", &buffers);
     Ok(buffers)
@@ -362,9 +353,5 @@ pub(crate) fn get_requested_buffers(
 // the only reliable way of checking the write access of current
 // user in a cross platform manner
 fn is_writable<P: AsRef<Path>>(p: P, md: &Metadata) -> bool {
-    !md.permissions().readonly()
-        && fs::OpenOptions::new()
-            .append(true)
-            .open(p)
-            .is_ok()
+    !md.permissions().readonly() && fs::OpenOptions::new().append(true).open(p).is_ok()
 }
