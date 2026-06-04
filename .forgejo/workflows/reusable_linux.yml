@@ -1,0 +1,102 @@
+name: Reusable workflow for linux
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      arm:
+        type: boolean
+        default: false
+      build_type:
+        type: string
+        default: "debug"
+      run_tests:
+        type: boolean
+        default: true
+      cross:  # Indicate if https://crates.io/crates/cross is needed
+        type: boolean
+        default: false
+
+env:
+  ARM: ${{ inputs.arm }}
+  TARGET: ${{ inputs.target }}
+  BUILD_TYPE: ${{ inputs.build_type }}
+  USE_CROSS: ${{ inputs.cross }}
+  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
+  CROSS_NO_WARNINGS: "0"
+
+jobs:
+  build:
+    name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
+    strategy:
+      matrix:
+        os: [node:22-bookworm]
+        rust: [stable]
+    runs-on: ghoolak-docker
+    container:
+      image: ${{ matrix.os }}
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install base packages
+        run: |
+          apt-get update
+          apt-get install -y pcregrep curl ca-certificates build-essential
+      - name: Install arm compilers
+        if: ${{ inputs.arm }}
+        run: |
+          apt-get update
+          apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+      - name: Install multilib compiler
+        if: ${{ inputs.target == 'i686-unknown-linux-gnu' }}
+        run: |
+          apt-get update
+          apt-get install -y gcc-multilib
+      - name: Install arm runner
+        if: ${{ inputs.arm && inputs.run_tests }}
+        run: |
+          apt-get update
+          apt-get install -y libc6-dev-armhf-cross qemu-user-static libc6-dev-arm64-cross
+
+      - name: Install Rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y \
+            --profile minimal \
+            --default-toolchain stable \
+            --target "${{ inputs.target }}"
+
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          . "$HOME/.cargo/env"
+
+          rustc --version
+          cargo --version
+          rustup target list --installed
+
+      - name: Install Rust's cross
+        if: ${{ inputs.cross }}
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build (${{ inputs.build_type }})
+        run: ./.forgejo/workflows/build.sh
+
+      - name: Run test
+        if: ${{ inputs.run_tests }}
+        run: .forgejo/workflows/run_test.sh
+
+      - name: Prepare release artifact
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        run: |
+          .forgejo/workflows/prepare_artifact.sh
+
+      - name: Upload for release
+        id: upload_artifact
+        uses: https://data.forgejo.org/actions/upload-artifact@v3
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        with:
+          name: binary-artifact-${{ inputs.target }}
+          path: |
+            rmate_${{ inputs.target }}.tar.gz
+          if-no-files-found: warn

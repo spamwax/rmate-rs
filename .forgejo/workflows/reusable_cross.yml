@@ -1,0 +1,105 @@
+name: Reusable workflow for cross targets
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      build_type:
+        type: string
+        default: "debug"
+      run_tests:
+        type: boolean
+        default: false
+      cross:  # Indicate if https://crates.io/crates/cross is needed
+        type: boolean
+        default: false
+
+env:
+  ARM: ${{ inputs.arm }}
+  TARGET: ${{ inputs.target }}
+  BUILD_TYPE: ${{ inputs.build_type }}
+  USE_CROSS: ${{ inputs.cross }}
+  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
+  CROSS_NO_WARNINGS: "0"
+
+jobs:
+  build:
+    runs-on: ghoolak-host
+    name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
+    strategy:
+      matrix:
+        rust: [stable]
+
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Use host Rust and cross
+        run: |
+          set -euo pipefail
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+          flock /srv/forgejo-runner-cache/rust/rustup-install.lock bash -lc '
+            "$HOME/.cargo/bin/rustup" target add "$TARGET"
+            "$HOME/.cargo/bin/rustup" component add rust-src
+          '
+
+          "$HOME/.cargo/bin/rustc" --version
+          "$HOME/.cargo/bin/cargo" --version
+          "$HOME/.cargo/bin/cross" --version
+
+      - name: Check Docker access
+        if: ${{ inputs.cross }}
+        run: |
+          docker version
+          docker info >/dev/null
+
+      - name: Build it (${{ inputs.build_type }})
+        run: |
+          flock /srv/forgejo-runner-cache/rust/rustup-install.lock \
+            ./.forgejo/workflows/build.sh
+
+      - name: Ensure FreeBSD test VM is running
+        if: ${{ inputs.run_tests && contains(inputs.target, 'freebsd') }}
+        run: |
+          set -euo pipefail
+
+          virsh_cmd=(virsh -c qemu:///system)
+
+          if ! "${virsh_cmd[@]}" domstate freebsd-rmate-test | grep -q running; then
+            "${virsh_cmd[@]}" start freebsd-rmate-test
+          fi
+
+          for _ in $(seq 1 60); do
+            if ssh -o BatchMode=yes -o ConnectTimeout=5 freebsd-rmate-test uname -a; then
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "FreeBSD test VM did not become reachable over SSH."
+          exit 1
+
+      - name: Run test
+        if: ${{ inputs.run_tests }}
+        run: |
+          flock /srv/forgejo-runner-cache/rust/rustup-install.lock \
+            ./.forgejo/workflows/run_test.sh
+
+      - name: Prepare release artifact
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        run: |
+          .forgejo/workflows/prepare_artifact.sh
+
+      - name: Upload for release
+        id: upload_artifact
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        uses: https://data.forgejo.org/actions/upload-artifact@v3
+        with:
+          name: binary-artifact-${{ inputs.target }}
+          path: |
+            rmate_${{ inputs.target }}.tar.gz
+          if-no-files-found: warn

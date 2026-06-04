@@ -1,0 +1,66 @@
+name: Reusable workflow for macos
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      arm:
+        type: boolean
+        default: false
+      build_type:
+        type: string
+        default: 'debug'
+      run_tests:
+        type: boolean
+        default: true
+
+env:
+  ARM: ${{ inputs.arm }}
+  TARGET: ${{ inputs.target }}
+  BUILD_TYPE: ${{ inputs.build_type }}
+  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
+
+jobs:
+  build:
+    name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
+    strategy:
+      matrix:
+        os: [macos-latest]
+        rust: [stable]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install pcregrep
+        run: |
+          brew install pcre2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: ${{ inputs.target }}
+          override: true
+      - name: Build (${{ inputs.build_type }})
+        run: .forgejo/workflows/build.sh
+
+      - name: Run test
+        if: ${{ inputs.run_tests }}
+        run: .forgejo/workflows/run_test.sh
+
+      - name: Prepare release artifact
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        run: |
+          .forgejo/workflows/prepare_artifact.sh
+      - name: Upload for release
+        id: upload_artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        with:
+          name: binary-artifact-${{ inputs.target }}
+          path: |
+            rmate_${{ inputs.target }}.zip
+          if-no-files-found: warn
