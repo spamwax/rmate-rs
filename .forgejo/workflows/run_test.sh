@@ -3,6 +3,7 @@ set -euo pipefail
 
 GREEN=$'\e[0;32m'
 NC=$'\e[0m'
+RED=$'\e[0;31m'
 
 # shellcheck disable=2329
 dump_output_on_error() {
@@ -115,6 +116,46 @@ run_freebsd_vm_test() {
     show_output_and_exit_ok
 }
 
+FREEBSD_VM_HOST="freebsd-14.3"
+ILLUMOS_VM_HOST="omnios-r151058"
+
+run_vm_test() {
+    local vm_type=$1
+    local remote_dir="/tmp/rmate-ci-${GITHUB_RUN_ID:-manual}-${TARGET}"
+    local vm_host
+
+    if [[ "$vm_type" == *freebsd* ]]; then
+        vm_host=$FREEBSD_VM_HOST
+    elif [[ "$vm_type" == *illumos* ]]; then
+        vm_host=$ILLUMOS_VM_HOST
+    else
+        printf "${RED}%s${NC}\n" "No VM available for $vm_type"
+        exit 1
+    fi
+
+    echo "Running ${GREEN}$TARGET${NC} binary inside $vm_host VM."
+
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
+    scp "$binary_path" "$vm_host:$remote_dir/rmate"
+    scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:$remote_dir/.rmate.rc"
+    scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:/home/forgejo/.rmate.rc"
+    scp Cargo.toml "$vm_host:$remote_dir/Cargo.toml"
+
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "echo 'in $vm_host:' && uname -a && pwd && echo HOME=\$HOME && ls -la '$remote_dir'"
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "chmod +x '$remote_dir/rmate' && file '$remote_dir/rmate' && ldd '$remote_dir/rmate'"
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "'$remote_dir/rmate' --help"
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "cd '$remote_dir' && pwd && ./rmate -vvv -w Cargo.toml 2>output.log || true; cat output.log" > output.log
+
+    assert_output_contains "Connection refused (os error " 10
+    assert_output_contains "Read disk settings-> { host: Some(" 11
+    show_output_and_exit_ok
+}
+
 run_cross_test() {
     echo "Running ${GREEN}$TARGET${NC} binary under Docker using Rust cross."
 
@@ -191,10 +232,10 @@ show_context
 
 case "$TARGET" in
     *illumos*)
-        run_illumos_vm_test
+        run_vm_test illumos
         ;;
     *freebsd*)
-        run_freebsd_vm_test
+        run_vm_test freebsd
         ;;
     aarch64-unknown-linux-gnu|armv7-unknown-linux-gnueabihf)
         if [[ "${ARM:-false}" == "true" ]]; then
