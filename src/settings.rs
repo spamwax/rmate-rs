@@ -94,7 +94,7 @@ pub struct RcSettings {
 pub(crate) fn read_disk_settings() -> (String, u16) {
     trace!("Loading settings from rmate.rc files");
     let host_port = (self::RMATE_HOST.to_string(), self::RMATE_PORT);
-    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc", ".rmate.rc"]
+    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc", "./.rmate.rc"]
         .iter()
         .inspect(|path| {
             trace!("Trying {}", path);
