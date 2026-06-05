@@ -94,7 +94,7 @@ pub struct RcSettings {
 pub(crate) fn read_disk_settings() -> (String, u16) {
     trace!("Loading settings from rmate.rc files");
     let host_port = (self::RMATE_HOST.to_string(), self::RMATE_PORT);
-    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc"]
+    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc", ".rmate.rc"]
         .iter()
         .inspect(|path| {
             trace!("Trying {}", path);
@@ -106,10 +106,17 @@ pub(crate) fn read_disk_settings() -> (String, u16) {
                 canonicalize(path)
             }
         })
-        .filter(Result::is_ok)
         .inspect(|canon| {
-            trace!("path was changed to: {}", canon.as_ref().unwrap().to_string_lossy())
+            if canon.is_err() {
+                trace!("  error: {}", canon.as_ref().unwrap_err())
+            } else {
+                trace!(
+                    "  path was changed to: {}",
+                    canon.as_ref().unwrap().to_string_lossy()
+                )
+            }
         })
+        .filter(Result::is_ok)
         .map(|canon| {
             let path = canon.unwrap();
             let fname = &Path::new(&path);

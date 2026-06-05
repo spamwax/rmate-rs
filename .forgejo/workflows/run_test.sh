@@ -19,10 +19,16 @@ sleep 2
 printf "ENVIRONMENT VARIABLES:\n"
 printf "\tUSE_CROSS: ${GREEN}$USE_CROSS${NC}\n"
 printf "\tARM: ${GREEN}$ARM${NC}\n\n"
+printf "\tGITHUB_WORKSPACE: ${GREEN}$GITHUB_WORKSPACE${NC}\n\n"
+printf "\tHOME: ${GREEN}$HOME${NC}\n\n"
 
 echo "Running tests using target/${GREEN}$TARGET${NC}/debug/rmate"; echo
 binary_path=target/"$TARGET/$BUILD_TYPE"/rmate
 file "$binary_path"
+
+pwd
+ls -la
+ls -l "$binary_path"
 
 # Run FreeBSD binaries inside the manually managed FreeBSD test VM on ghoolak.
 # This is needed because cross can build FreeBSD targets but cannot run them.
@@ -35,8 +41,13 @@ if [[ "$TARGET" == *"freebsd"* ]]; then
     # shellcheck disable=2029
     ssh "$vm_host" "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
     scp "$binary_path" "$vm_host:$remote_dir/rmate"
+    scp .rmate.rc "$vm_host:$remote_dir/.rmate.rc"
+    scp .rmate.rc "$vm_host:/home/forgejo/.rmate.rc"
+    scp .rmate.rc "$vm_host:$GITHUB_WORKSPACE/.rmate.rc" || true
     scp Cargo.toml "$vm_host:$remote_dir/Cargo.toml"
 
+    # shellcheck disable=2029
+    ssh "$vm_host" "ls -l ~ && ls -l $remote_dir"
     # shellcheck disable=2029
     ssh "$vm_host" "chmod +x '$remote_dir/rmate' && '$remote_dir/rmate' --help"
     # shellcheck disable=2029
