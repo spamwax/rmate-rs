@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -ex
+export CROSS_DEBUG=1
+export CROSS_NO_WARNINGS=0
 
 if [[ -z "$USE_CROSS" || "$USE_CROSS" == "false" ]]; then
     cargo_runner="cargo"
