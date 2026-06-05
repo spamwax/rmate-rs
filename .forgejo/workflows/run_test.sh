@@ -23,7 +23,7 @@ trap dump_output_on_error ERR
 write_test_rc() {
     cat << EOB > "$GITHUB_WORKSPACE/.rmate.rc"
 host: auto
-port: 52698
+port: 62698
 unixsocket: ~/.rmate.socket
 EOB
 }
