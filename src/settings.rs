@@ -107,6 +107,9 @@ pub(crate) fn read_disk_settings() -> (String, u16) {
             }
         })
         .filter(Result::is_ok)
+        .inspect(|canon| {
+            trace!("path was changed to: {}", canon.as_ref().unwrap().to_string_lossy())
+        })
         .map(|canon| {
             let path = canon.unwrap();
             let fname = &Path::new(&path);
