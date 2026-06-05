@@ -30,7 +30,7 @@ pub(crate) struct Settings {
     pub host: Option<String>,
 
     /// Port number to use for connection. Defaults to 52698
-    #[structopt(short, long, env = "RMATE_PORT", min_values = 1)]
+    #[structopt(short, long, env = "RMATE_PORT", name = "PORT")]
     pub port: Option<u16>,
 
     #[allow(clippy::doc_markdown)]
