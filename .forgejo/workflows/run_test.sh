@@ -4,6 +4,7 @@ set -euo pipefail
 GREEN=$'\e[0;32m'
 NC=$'\e[0m'
 
+# shellcheck disable=2329
 dump_output_on_error() {
     local rc=$?
 
@@ -60,6 +61,31 @@ show_output_and_exit_ok() {
     sleep 2
     cat ./output.log
     exit 0
+}
+
+run_illumos_vm_test() {
+    echo "Running ${GREEN}$TARGET${NC} binary inside FreeBSD VM."
+
+    local vm_host="omnios-r151058"
+    local remote_dir="/tmp/rmate-ci-${GITHUB_RUN_ID:-manual}-${TARGET}"
+
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
+    scp "$binary_path" "$vm_host:$remote_dir/rmate"
+    scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:$remote_dir/.rmate.rc"
+    scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:/home/forgejo/.rmate.rc"
+    scp Cargo.toml "$vm_host:$remote_dir/Cargo.toml"
+
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "echo 'in $vm_host:' && pwd && echo HOME=\$HOME && ls -la '$remote_dir'"
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "chmod +x '$remote_dir/rmate' && '$remote_dir/rmate' --help"
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "cd '$remote_dir' && pwd && ./rmate -vvv -w Cargo.toml 2>output.log || true; cat output.log" > output.log
+
+    assert_output_contains "Connection refused (os error " 10
+    assert_output_contains "Read disk settings-> { host: Some(" 11
+    show_output_and_exit_ok
 }
 
 run_freebsd_vm_test() {
@@ -162,6 +188,9 @@ binary_path="target/$TARGET/$BUILD_TYPE/rmate"
 show_context
 
 case "$TARGET" in
+    *illumos*)
+        run_illumos_vm_test
+        ;;
     *freebsd*)
         run_freebsd_vm_test
         ;;
