@@ -1,6 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 use log::trace;
 use serde::Deserialize;
+use std::env;
 use std::ffi::OsString;
 use std::fs::canonicalize;
 use std::fs::File;
@@ -90,11 +91,16 @@ pub struct RcSettings {
     pub(crate) unixsocket: Option<String>,
 }
 
+
 // Read host/settings from rmate.rc files
 pub(crate) fn read_disk_settings() -> (String, u16) {
     trace!("Loading settings from rmate.rc files");
     let host_port = (self::RMATE_HOST.to_string(), self::RMATE_PORT);
-    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc", "./.rmate.rc"]
+    // File precedence is from least specific to most specific, so later files
+    // override earlier files: system defaults, user defaults, then local project.
+    // Environment variables are applied after files because they are an explicit
+    // per-process override.
+    let disk_host_port = ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc", "./.rmate.rc"]
         .iter()
         .inspect(|path| {
             trace!("Trying {}", path);
@@ -159,5 +165,26 @@ pub(crate) fn read_disk_settings() -> (String, u16) {
                 newport = port;
             }
             (newhost, newport)
-        })
+        });
+
+    let (mut host, mut port) = disk_host_port;
+
+    if let Ok(env_host) = env::var("RMATE_HOST") {
+        trace!("Overriding host from RMATE_HOST");
+        host = env_host;
+    }
+
+    if let Ok(env_port) = env::var("RMATE_PORT") {
+        match env_port.parse::<u16>() {
+            Ok(parsed_port) => {
+                trace!("Overriding port from RMATE_PORT");
+                port = parsed_port;
+            }
+            Err(err) => {
+                trace!("Ignoring invalid RMATE_PORT={env_port:?}: {err}");
+            }
+        }
+    }
+
+    (host, port)
 }
