@@ -4,6 +4,20 @@ set -euo pipefail
 GREEN=$'\e[0;32m'
 NC=$'\e[0m'
 
+dump_output_on_error() {
+    local rc=$?
+
+    if [[ $rc -ne 0 && -f ./output.log ]]; then
+        printf '\n%s\n' '----- output.log after failure -----'
+        cat ./output.log
+        printf '%s\n' '----- end output.log -----'
+    fi
+
+    exit "$rc"
+}
+
+trap dump_output_on_error ERR
+
 write_test_rc() {
     cat << EOB > "$GITHUB_WORKSPACE/.rmate.rc"
 host: auto
@@ -51,7 +65,7 @@ show_output_and_exit_ok() {
 run_freebsd_vm_test() {
     echo "Running ${GREEN}$TARGET${NC} binary inside FreeBSD VM."
 
-    local vm_host="freebsd-rmate-test"
+    local vm_host="freebsd-14.3"
     local remote_dir="/tmp/rmate-ci-${GITHUB_RUN_ID:-manual}-${TARGET}"
 
     # shellcheck disable=SC2029
@@ -76,7 +90,7 @@ run_freebsd_vm_test() {
 run_cross_test() {
     echo "Running ${GREEN}$TARGET${NC} binary under Docker using Rust cross."
 
-    cross run --target "$TARGET" -- --help || true
+    cross run --target "$TARGET" -- --help
     cross run --target "$TARGET" -- -vvv -w Cargo.toml 2> output.log || true
 
     assert_output_contains "Connection refused (os error " 1
@@ -131,7 +145,8 @@ run_arm_linux_qemu_test() {
     fi
 
     export RUST_BACKTRACE=full
-    "$arm_runner" -L "$libpath" "$binary_path" -vvv -w Cargo.toml 2> output.log
+    "$arm_runner" -L "$libpath" "$binary_path" --help
+    "$arm_runner" -L "$libpath" "$binary_path" -vvv -w Cargo.toml 2> output.log || true
 
     assert_output_contains "Connection refused (os error " 8
     assert_output_contains "Read disk settings-> { host: Some(" 9
@@ -139,6 +154,7 @@ run_arm_linux_qemu_test() {
 }
 
 write_test_rc
+rm -f ./output.log
 export RUST_LOG=trace
 sleep 2
 

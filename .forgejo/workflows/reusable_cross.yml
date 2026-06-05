@@ -62,23 +62,28 @@ jobs:
           flock /srv/forgejo-runner-cache/rust/rustup-install.lock \
             ./.forgejo/workflows/build.sh
 
-      - name: Ensure FreeBSD test VM is running
+      - name: Ensure FreeBSD VM is running
         if: ${{ inputs.run_tests && contains(inputs.target, 'freebsd') }}
         run: |
           set -euo pipefail
 
           virsh_cmd=(virsh -c qemu:///system)
 
-          if ! "${virsh_cmd[@]}" domstate freebsd-rmate-test | grep -q running; then
-            "${virsh_cmd[@]}" start freebsd-rmate-test
+          if ! "${virsh_cmd[@]}" domstate freebsd-14.3 | grep -q running; then
+            echo "Starting FreeBSD VM"
+            "${virsh_cmd[@]}" start freebsd-14.3
           fi
 
           for _ in $(seq 1 60); do
-            if ssh -o BatchMode=yes -o ConnectTimeout=5 freebsd-rmate-test uname -a; then
+            if ssh -o BatchMode=yes -o ConnectTimeout=5 freebsd-14.3 uname -a >/dev/null 2>&1; then
+              echo "FreeBSD VM is ready!"
+              ssh -o BatchMode=yes -o ConnectTimeout=5 freebsd-14.3 uname -a
               exit 0
             fi
+            printf "."
             sleep 5
           done
+          printf "\n"
 
           echo "FreeBSD test VM did not become reachable over SSH."
           exit 1

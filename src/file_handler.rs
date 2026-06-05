@@ -25,7 +25,7 @@ pub(crate) fn write_to_disk(
     let token = myline.trim().rsplitn(2, ':').collect::<Vec<&str>>()[0]
         .trim()
         .to_string();
-    trace!("  extracted token: >{}<", token);
+    trace!("  extracted token: >{token}<");
     let filename = opened_buffers
         .get(&token)
         .unwrap()
@@ -57,7 +57,7 @@ pub(crate) fn write_to_disk(
         let mut buf_writer = BufWriter::with_capacity(1024, rand_temp_file);
         // Remote editor may send multiple "data: SIZE" sections under one "save" command
 
-        trace!("-> About to receive & save {}", filename);
+        trace!("-> About to receive & save {filename}");
         loop {
             buffer_reader.read_line(&mut myline)?;
             if myline.trim().is_empty() {
@@ -70,12 +70,12 @@ pub(crate) fn write_to_disk(
                 .trim()
                 .parse::<usize>()
                 .unwrap();
-            trace!(" save size:\t{:?}", data_size);
+            trace!(" save size:\t{data_size:?}");
             myline.clear();
 
             let mut total = 0usize;
             let reader_len = buffer_reader.buffer().len();
-            trace!(" reader buffer len: {}", reader_len);
+            trace!(" reader buffer len: {reader_len}");
 
             let mut buffer = vec![0u8; cmp::max(buffer_reader.buffer().len(), buf_size)];
             let mut chunk_reader = buffer_reader.take(data_size as u64);
@@ -84,7 +84,7 @@ pub(crate) fn write_to_disk(
                 let n = chunk_reader.read(&mut buffer)?;
                 if n == 0 {
                     total_written += total;
-                    trace!("   total_written = {}", total_written);
+                    trace!("   total_written = {total_written}");
                     buf_writer.flush()?;
                     break;
                 }
@@ -94,10 +94,7 @@ pub(crate) fn write_to_disk(
                 }
                 total += n;
                 trace!(
-                    "   - so far received {} of {} bytes (chunk size: {})",
-                    total,
-                    data_size,
-                    n
+                    "   - so far received {total} of {data_size} bytes (chunk size: {n})"
                 );
             }
         }
@@ -111,7 +108,7 @@ pub(crate) fn write_to_disk(
         no_data_chunks
     );
 
-    debug!("  bytes transferred: {}", total_written);
+    debug!("  bytes transferred: {total_written}");
     // Open the file we are supposed to actuallly save to, and copy
     // content of temp. file to it. ensure we only write number of bytes that
     // Sublime Text has sent us.
@@ -127,8 +124,8 @@ pub(crate) fn write_to_disk(
     }
 
     debug!(
-        "About to copy the temp file over the main file ({:?})",
-        opened_buffers.get(&token).unwrap().display_name
+        "About to copy the temp file over the main file ({})",
+        opened_buffers.get(&token).unwrap().display_name.display()
     );
     opened_buffers
         .get_mut(&token)
@@ -166,7 +163,7 @@ pub(crate) fn write_to_disk(
                     warn!(
                         "Couldn't write to backup: {} ({})",
                         backup_fn_canon.display(),
-                        e.to_string()
+                        e
                     );
                 } else {
                     backup = Some(backup_fn_canon);
@@ -219,7 +216,7 @@ pub(crate) fn write_to_disk(
                 else {
                     error!(
                         "{:?} MAY have been CORRUPTED.",
-                        fn_canon.file_name().unwrap()
+                        fn_canon.file_name().unwrap().display()
                     );
                     panic!("Halting all operations due to unrceoverable write errors");
                 }
@@ -228,13 +225,13 @@ pub(crate) fn write_to_disk(
         .map(|(written_size, fn_canon, backup)| {
             // Verify # of bytes written & delete backup file
             assert_eq!(total_written as u64, written_size);
-            info!("Saved to {:?}", fn_canon);
+            info!("Saved to {}", fn_canon.display());
             if let Some(backup_fn) = backup {
                 if let Err(e) = fs::remove_file(&backup_fn) {
                     debug!(
                         "Couldn't remove back up file: {} ({})",
                         backup_fn.display(),
-                        e.to_string()
+                        e
                     );
                 } else {
                     trace!("Removed backup file: {:}", backup_fn.display());
@@ -259,14 +256,14 @@ pub(crate) fn get_requested_buffers(
             match r {
                 Err(e) => match e.kind() {
                     ErrorKind::NotFound => {
-                        info!("Creating new empty file: {:?}", &file);
+                        info!("Creating new empty file: {:?}", &file.display());
                         let _r = File::create(file).map_err(|e| e.to_string())?;
                         canonicalize(file).map_err(|e| e.to_string())?
                     }
                     _ => return Err(e.to_string()),
                 },
                 Ok(fc) => {
-                    warn!("File already exists: {:?}", &fc);
+                    warn!("File already exists: {:?}", &fc.display());
                     fc
                 }
             }
@@ -300,7 +297,7 @@ pub(crate) fn get_requested_buffers(
         let canwrite = is_writable(&filename_canon, &md);
         // Show a warning even though user has used the --force flag.
         if !canwrite && settings.force {
-            warn!("{:?} is readonly!", filename_canon);
+            warn!("{} is readonly!", filename_canon.display());
         }
         if !(canwrite || settings.force) {
             return Err(format!(
@@ -311,7 +308,7 @@ pub(crate) fn get_requested_buffers(
 
         let mut disp_name = std::ffi::OsString::with_capacity(128);
         disp_name.push(gethostname::gethostname());
-        debug!("Hostname: {:?}", disp_name);
+        debug!("Hostname: {}", disp_name.display());
         disp_name.push(":");
         disp_name.push(file_name_string);
 
@@ -321,7 +318,7 @@ pub(crate) fn get_requested_buffers(
         let mut hasher = DefaultHasher::new();
         filename_canon.hash(&mut hasher);
         let hashed_fn = hasher.finish();
-        trace!("hashed_fn (token): {:x}", hashed_fn);
+        trace!("hashed_fn (token): {hashed_fn:x}");
         if let Some(v) = buffers.insert(
             // hashed_fn.to_string(),
             format!("{hashed_fn:x}"),

@@ -12,7 +12,6 @@ on:
 name: tests
 
 env:
-  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
   OSX_SDK_VERSION: 11.1
   RUST_BACKTRACE: "1"
 
@@ -25,7 +24,7 @@ env:
 jobs:
   x86_64-linux:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux,')
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
       target: 'x86_64-unknown-linux-gnu'
@@ -33,7 +32,7 @@ jobs:
       run_tests: true
   i686-linux:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-linux,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-linux,')
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
       target: 'i686-unknown-linux-gnu'
@@ -41,7 +40,7 @@ jobs:
       run_tests: true
   aarch64-linux:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',aarch64-linux,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',aarch64-linux,')
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
       target: 'aarch64-unknown-linux-gnu'
@@ -50,7 +49,7 @@ jobs:
       run_tests: true
   armv7-linux:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',armv7-linux,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',armv7-linux,')
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
       target: 'armv7-unknown-linux-gnueabihf'
@@ -73,7 +72,7 @@ jobs:
   #     run_tests: false
   x86_64-illumos:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-illumos,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-illumos,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'x86_64-unknown-illumos'
@@ -82,7 +81,7 @@ jobs:
       cross: true
   x86_64-linux-android:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux-android,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux-android,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'x86_64-linux-android'
@@ -91,7 +90,7 @@ jobs:
       cross: true
   i686-linux-android:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-linux-android,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-linux-android,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'i686-linux-android'
@@ -100,7 +99,7 @@ jobs:
       cross: true
   aarch64-linux-android:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',aarch64-linux-android,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',aarch64-linux-android,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'aarch64-linux-android'
@@ -109,7 +108,7 @@ jobs:
       cross: true
   armv7-linux-android:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',armv7-linux-android,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',armv7-linux-android,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'armv7-linux-androideabi'
@@ -118,7 +117,7 @@ jobs:
       cross: true
   arm-linux-android:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',arm-linux-android,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',arm-linux-android,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'arm-linux-androideabi'
@@ -127,7 +126,7 @@ jobs:
       cross: true
   thumbv7neon-linux-android:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',thumbv7neon-linux-android,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',thumbv7neon-linux-android,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'thumbv7neon-linux-androideabi'
@@ -136,9 +135,7 @@ jobs:
       cross: true
   x86_64-freebsd:
     runs-on: ghoolak-docker
-    if: |
-      ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') ||
-        contains(env.CI_JOBS, ',x86_64-freebsd,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-freebsd,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'x86_64-unknown-freebsd'
@@ -147,10 +144,10 @@ jobs:
       cross: true
   i686-unknown-freebsd:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type != 'tag' && (contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-unknown-freebsd,')) }}
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-unknown-freebsd,')
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'i686-unknown-freebsd'
       build_type: 'debug'
-      run_tests: false
+      run_tests: true
       cross: true

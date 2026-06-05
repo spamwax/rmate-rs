@@ -8,7 +8,7 @@ on:
 name: release
 
 env:
-  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
+  RELEASE: ${{ github.ref_type == 'tag' }}
   OSX_SDK_VERSION: 11.1
   RUST_BACKTRACE: "1"
 
@@ -132,9 +132,7 @@ jobs:
       cross: true
   x86_64-freebsd:
     runs-on: ghoolak-docker
-    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && \
-      (contains(env.RELEASE_JOBS, ',all,') || \
-       contains(env.RELEASE_JOBS, ',x86_64-freebsd,')) }}
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-freebsd,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'x86_64-unknown-freebsd'
@@ -154,14 +152,11 @@ jobs:
   gh_release:
     name: Release rmate
     runs-on: ghoolak-docker
-    # needs: [x86_64-linux, i686-linux, aarch64-linux, armv7-linux, x86_64-illumos, x86_64-linux-android, i686-linux-android, aarch64-linux-android, armv7-linux-android, arm-linux-android, thumbv7neon-linux-android]
     needs:
       - x86_64-linux
       - i686-linux
       - aarch64-linux
       - armv7-linux
-      # - x86_64-macos
-      # - aarch64-macos
       - x86_64-illumos
       - x86_64-linux-android
       - i686-linux-android
@@ -171,9 +166,16 @@ jobs:
       - thumbv7neon-linux-android
       - x86_64-freebsd
       - i686-unknown-freebsd
+      # - x86_64-macos
+      # - aarch64-macos
 
-    # needs: [x86_64-linux, i686-linux, aarch64-linux, armv7-linux, x86_64-macos, aarch64-macos, x86_64-illumos, x86_64-linux-android, i686-linux-android, aarch64-linux-android, armv7-linux-android, arm-linux-android, thumbv7neon-linux-android]
     steps:
+      # - uses: https://data.forgejo.org/actions/download-artifact@v3
+      #   with:
+      #     name: binary-artifact-x86_64-apple-darwin
+      # - uses: https://data.forgejo.org/actions/download-artifact@v3
+      #   with:
+      #     name: binary-artifact-aarch64-apple-darwin
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
           name: binary-artifact-x86_64-unknown-linux-gnu
@@ -186,12 +188,6 @@ jobs:
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
           name: binary-artifact-armv7-unknown-linux-gnueabihf
-      # - uses: https://data.forgejo.org/actions/download-artifact@v3
-      #   with:
-      #     name: binary-artifact-x86_64-apple-darwin
-      # - uses: https://data.forgejo.org/actions/download-artifact@v3
-      #   with:
-      #     name: binary-artifact-aarch64-apple-darwin
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
           name: binary-artifact-x86_64-unknown-illumos
@@ -215,7 +211,7 @@ jobs:
           name: binary-artifact-thumbv7neon-linux-androideabi
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
-          name: binary-artifact-x86_64-freebsd
+          name: binary-artifact-x86_64-unknown-freebsd
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
           name: binary-artifact-i686-unknown-freebsd
