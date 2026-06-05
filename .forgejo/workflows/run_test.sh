@@ -104,7 +104,9 @@ run_freebsd_vm_test() {
     # shellcheck disable=SC2029
     ssh "$vm_host" "echo 'in $vm_host:' && pwd && echo HOME=\$HOME && ls -la '$remote_dir'"
     # shellcheck disable=SC2029
-    ssh "$vm_host" "chmod +x '$remote_dir/rmate' && '$remote_dir/rmate' --help"
+    ssh "$vm_host" "chmod +x '$remote_dir/rmate' && file '$remote_dir/rmate' && ldd '$remote_dir/rmate'"
+    # shellcheck disable=SC2029
+    ssh "$vm_host" "'$remote_dir/rmate' --help"
     # shellcheck disable=SC2029
     ssh "$vm_host" "cd '$remote_dir' && pwd && ./rmate -vvv -w Cargo.toml 2>output.log || true; cat output.log" > output.log
 
