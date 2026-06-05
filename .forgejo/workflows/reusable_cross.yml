@@ -62,22 +62,30 @@ jobs:
           flock /srv/forgejo-runner-cache/rust/rustup-install.lock \
             ./.forgejo/workflows/build.sh
 
-      - name: Ensure FreeBSD VM is running
-        if: ${{ inputs.run_tests && contains(inputs.target, 'freebsd') }}
+      - name: Ensure FreeBSD/illumos VM is running
+        if: ${{ inputs.run_tests && (contains(inputs.target, 'freebsd') || contains(inputs.target, 'illumos')) }}
         run: |
           set -euo pipefail
 
           virsh_cmd=(virsh -c qemu:///system)
+          shopt -s nocasematch
+          target="${{ inputs.target }}"
+          if [[ "$target" == *freebsd* ]]; then
+            vm=freebsd-14.3
+          else
+            vm=omnios-r151058
+          fi
+          shopt -u nocasematch
 
-          if ! "${virsh_cmd[@]}" domstate freebsd-14.3 | grep -q running; then
-            echo "Starting FreeBSD VM"
-            "${virsh_cmd[@]}" start freebsd-14.3
+          if ! "${virsh_cmd[@]}" domstate "$vm" | grep -q running; then
+            echo "Starting $vm VM"
+            "${virsh_cmd[@]}" start "$vm"
           fi
 
           for _ in $(seq 1 60); do
-            if ssh -o BatchMode=yes -o ConnectTimeout=5 freebsd-14.3 uname -a >/dev/null 2>&1; then
-              echo "FreeBSD VM is ready!"
-              ssh -o BatchMode=yes -o ConnectTimeout=5 freebsd-14.3 uname -a
+            if ssh -o BatchMode=yes -o ConnectTimeout=5 "$vm" uname -a >/dev/null 2>&1; then
+              echo "$vm VM is ready!"
+              ssh -o BatchMode=yes -o ConnectTimeout=5 "$vm" uname -a
               exit 0
             fi
             printf "."
@@ -85,7 +93,7 @@ jobs:
           done
           printf "\n"
 
-          echo "FreeBSD test VM did not become reachable over SSH."
+          echo "$vm VM did not become reachable over SSH."
           exit 1
 
       - name: Run test
