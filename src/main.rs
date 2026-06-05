@@ -2,7 +2,7 @@ use fork::{fork, Fork};
 use log::{debug, error, trace};
 use std::collections::HashMap;
 use std::env;
-use std::io::{BufRead, BufReader, Error, ErrorKind};
+use std::io::{BufRead, BufReader, Error};
 
 mod file_handler;
 mod remote_editor;
@@ -50,11 +50,11 @@ fn main() -> Result<(), String> {
             // iterator returned by split() always returns at least one item so unwrap() is safe
             conn.split(' ').take(1).next().unwrap().to_string()
         });
-        trace!("  from SSH_CONNECTION: {}", auto_host);
+        trace!("  from SSH_CONNECTION: {auto_host}");
         settings.host.replace(auto_host);
     }
 
-    trace!("rmate settings: {:#?}", settings);
+    trace!("rmate settings: {settings:#?}");
 
     // Check & connect to socket
     let socket = remote_editor::connect_to_editor(&settings).map_err(|e| e.to_string())?;
@@ -80,7 +80,7 @@ fn main() -> Result<(), String> {
 fn run_fork() -> Result<bool, String> {
     match fork() {
         Ok(Fork::Parent(child)) => {
-            trace!("Parent process created a child: {}", child);
+            trace!("Parent process created a child: {child}");
             Ok(true)
         }
         Ok(Fork::Child) => {
@@ -88,7 +88,7 @@ fn run_fork() -> Result<bool, String> {
             Ok(false)
         }
         Err(e) => {
-            error!("{}", e.to_string());
+            error!("{e}");
             Err(format!("OS Error no. {e}"))
         }
     }
@@ -103,7 +103,7 @@ fn handle_remote(
 
     let mut myline = String::with_capacity(128);
     let bsize = socket.recv_buffer_size()? * 2;
-    trace!("socket recv size: {}", bsize);
+    trace!("socket recv size: {bsize}");
 
     let mut buffer_reader = BufReader::with_capacity(bsize, socket);
     // Wait for commands from remote app
@@ -126,7 +126,7 @@ fn handle_remote(
                 myline.clear();
                 match file_handler::write_to_disk(&mut opened_buffers, &mut buffer_reader, bsize) {
                     Ok(n) => total += n,
-                    Err(e) => error!("Couldn't save: {}", e.to_string()),
+                    Err(e) => error!("Couldn't save: {e}"),
                 }
             }
             _ => {
@@ -135,10 +135,10 @@ fn handle_remote(
                     continue;
                 }
                 error!("***===*** Unrecognized shit: {:?}", myline.trim());
-                return Err(Error::new(ErrorKind::Other, "unrecognized shit"));
+                return Err(Error::other("unrecognized shit"));
             }
         }
     }
-    trace!("Cumulative total bytes saved: {}", total);
+    trace!("Cumulative total bytes saved: {total}");
     Ok(())
 }

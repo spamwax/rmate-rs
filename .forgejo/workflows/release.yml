@@ -1,0 +1,230 @@
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+  # For quickly detecting important differences in runner configurations
+
+name: release
+
+env:
+  RELEASE: ${{ github.ref_type == 'tag' }}
+  OSX_SDK_VERSION: 11.1
+  RUST_BACKTRACE: "1"
+
+  # Use ",all," to run everything.
+  # Or use one/more job names, comma-wrapped:
+  #   ",x86_64-freebsd,"
+  #   ",x86_64-freebsd,x86_64-linux-android,"
+  RELEASE_JOBS: ",all,"
+
+jobs:
+  x86_64-linux:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-linux,')) }}
+    uses: ./.forgejo/workflows/reusable_linux.yml
+    with:
+      target: 'x86_64-unknown-linux-gnu'
+      build_type: 'release'
+      run_tests: false
+  i686-linux:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',i686-linux,')) }}
+    uses: ./.forgejo/workflows/reusable_linux.yml
+    with:
+      target: 'i686-unknown-linux-gnu'
+      build_type: 'release'
+      run_tests: false
+  aarch64-linux:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-linux,')) }}
+    uses: ./.forgejo/workflows/reusable_linux.yml
+    with:
+      target: 'aarch64-unknown-linux-gnu'
+      arm: true
+      build_type: 'release'
+      run_tests: false
+  armv7-linux:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',armv7-linux,')) }}
+    uses: ./.forgejo/workflows/reusable_linux.yml
+    with:
+      target: 'armv7-unknown-linux-gnueabihf'
+      arm: true
+      build_type: 'release'
+      run_tests: false
+  # x86_64-macos:
+  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+  #   uses: ./.forgejo/workflows/reusable_macos.yml
+  #   with:
+  #     target: 'x86_64-apple-darwin'
+  #     build_type: 'release'
+  #     run_tests: false
+  # aarch64-macos:
+  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+  #   uses: ./.forgejo/workflows/reusable_macos.yml
+  #   with:
+  #     target: 'aarch64-apple-darwin'
+  #     build_type: 'release'
+  #     run_tests: false
+  x86_64-illumos:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-illumos,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'x86_64-unknown-illumos'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  x86_64-linux-android:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-linux-android,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'x86_64-linux-android'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  i686-linux-android:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',i686-linux-android,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'i686-linux-android'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  aarch64-linux-android:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-linux-android,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'aarch64-linux-android'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  armv7-linux-android:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',armv7-linux-android,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'armv7-linux-androideabi'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  arm-linux-android:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',arm-linux-android,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'arm-linux-androideabi'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  thumbv7neon-linux-android:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',thumbv7neon-linux-android,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'thumbv7neon-linux-androideabi'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  x86_64-freebsd:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-freebsd,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'x86_64-unknown-freebsd'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+  i686-unknown-freebsd:
+    runs-on: ghoolak-docker
+    if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',i686-unknown-freebsd,')) }}
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'i686-unknown-freebsd'
+      build_type: 'release'
+      run_tests: false
+      cross: true
+
+  gh_release:
+    name: Release rmate
+    runs-on: ghoolak-docker
+    needs:
+      - x86_64-linux
+      - i686-linux
+      - aarch64-linux
+      - armv7-linux
+      - x86_64-illumos
+      - x86_64-linux-android
+      - i686-linux-android
+      - aarch64-linux-android
+      - armv7-linux-android
+      - arm-linux-android
+      - thumbv7neon-linux-android
+      - x86_64-freebsd
+      - i686-unknown-freebsd
+      # - x86_64-macos
+      # - aarch64-macos
+
+    steps:
+      # - uses: https://data.forgejo.org/actions/download-artifact@v3
+      #   with:
+      #     name: binary-artifact-x86_64-apple-darwin
+      # - uses: https://data.forgejo.org/actions/download-artifact@v3
+      #   with:
+      #     name: binary-artifact-aarch64-apple-darwin
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-x86_64-unknown-linux-gnu
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-i686-unknown-linux-gnu
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-aarch64-unknown-linux-gnu
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-armv7-unknown-linux-gnueabihf
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-x86_64-unknown-illumos
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-x86_64-linux-android
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-i686-linux-android
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-aarch64-linux-android
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-armv7-linux-androideabi
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-arm-linux-androideabi
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-thumbv7neon-linux-androideabi
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-x86_64-unknown-freebsd
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-i686-unknown-freebsd
+      # - run: ls -la /home/runner/work/rmate-rs/rmate-rs || true
+      - name: Show downloaded release files
+        run: |
+          echo "pwd=$(pwd)"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          find . -maxdepth 3 -type f -name 'rmate_*' -ls
+          ls -la "$GITHUB_WORKSPACE" || true
+      - uses: https://github.com/softprops/action-gh-release@v2.6.2
+        with:
+          fail_on_unmatched_files: false
+          files: |
+            rmate_*.tar.gz
+            rmate_*.zip

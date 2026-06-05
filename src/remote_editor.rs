@@ -13,7 +13,7 @@ pub(crate) fn connect_to_editor(
 
     debug!("Host: {}", settings.host.as_ref().unwrap());
     let addr_srv = if settings.host.as_ref().unwrap() == "localhost" {
-        IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
+        IpAddr::V4(Ipv4Addr::LOCALHOST)
     } else {
         settings
             .host
@@ -24,7 +24,7 @@ pub(crate) fn connect_to_editor(
     };
     let addr_srv = std::net::SocketAddr::new(addr_srv, settings.port.unwrap()).into();
 
-    debug!("About to connect to {:?}", addr_srv);
+    debug!("About to connect to {addr_srv:?}");
     socket.connect(&addr_srv)?;
     trace!(
         "Socket details: \n\tmy address: {:?}\n\tremote address {:?}",
@@ -46,9 +46,9 @@ pub(crate) fn close_buffer(
             break;
         }
         let command: Vec<&str> = myline.trim().splitn(2, ':').collect::<Vec<&str>>();
-        trace!("  close instruction:\t{:?}", command);
+        trace!("  close instruction:\t{command:?}");
         let (_, closed_buffer) = opened_buffers.remove_entry(command[1].trim()).unwrap();
-        info!("Closed: {:?}", closed_buffer.canon_path.as_os_str());
+        info!("Closed: {:?}", closed_buffer.canon_path.as_os_str().display());
         myline.clear();
     }
 }
@@ -60,9 +60,9 @@ pub(crate) fn open_file_in_remote(
 ) -> Result<(), String> {
     // ) -> Result<HashMap<String, settings::OpenedBuffer>, String> {
     let bsize = socket.recv_buffer_size().map_err(|e| e.to_string())?;
-    trace!("Socket recv buffer: {}", bsize);
+    trace!("Socket recv buffer: {bsize}");
     let bsize = socket.send_buffer_size().map_err(|e| e.to_string())? * 2;
-    trace!("Socket send buffer: {}", bsize);
+    trace!("Socket send buffer: {bsize}");
 
     {
         let mut buf_writer = BufWriter::with_capacity(bsize, socket);
@@ -88,7 +88,7 @@ pub(crate) fn open_file_in_remote(
                 if settings.keep { "no" } else { "yes" },
                 token
             );
-            trace!("header: {}", header);
+            trace!("header: {header}");
             buf_writer
                 .write(header.as_bytes())
                 .map_err(|e| e.to_string())?;
@@ -96,7 +96,7 @@ pub(crate) fn open_file_in_remote(
 
             if let Some(filetype) = &opened_buffer.filetype {
                 writeln!(&mut buf_writer, "file-type: {filetype}").map_err(|e| e.to_string())?;
-                debug!("file-type: {}", filetype);
+                debug!("file-type: {filetype}");
             }
             writeln!(&mut buf_writer, "data: {}", opened_buffer.size).map_err(|e| e.to_string())?;
             buf_writer.flush().map_err(|e| e.to_string())?;
@@ -119,17 +119,17 @@ pub(crate) fn open_file_in_remote(
                 total += length;
                 buf_writer.write_all(buffer).map_err(|e| e.to_string())?;
                 buf_writer.flush().map_err(|e| e.to_string())?;
-                trace!("  sent a chunk of {} bytes to remote editor", length);
+                trace!("  sent a chunk of {length} bytes to remote editor");
                 buf_reader.consume(length);
             }
             // Signal we are done sending this file by writing \n to buffer.
             writeln!(&mut buf_writer).map_err(|e| e.to_string())?;
             buf_writer.flush().map_err(|e| e.to_string())?;
             debug!("  os-reported file size: {}", opened_buffer.size);
-            debug!("  actual bytes read: {}", total);
+            debug!("  actual bytes read: {total}");
             info!(
                 "<- Finished opening {:?} in remote.",
-                opened_buffer.canon_path
+                opened_buffer.canon_path.display()
             );
         }
         writeln!(&mut buf_writer, ".").map_err(|e| e.to_string())?;

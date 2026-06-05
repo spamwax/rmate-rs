@@ -2,7 +2,8 @@
 set -ex
 
 create_linux() {
-    pwd
+    printf "In create_linux: %s\n" "$(pwd)"
+
     artifacts=rmate_"$TARGET".tar.gz
     strip_cmd=
 
@@ -24,7 +25,8 @@ create_linux() {
 }
 
 create_macos() {
-    pwd
+    printf "In create_linux: %s\n" "$(pwd)"
+
     artifacts=rmate_"$TARGET".zip
     cp target/"$TARGET/$BUILD_TYPE"/rmate . || true
     strip rmate || true

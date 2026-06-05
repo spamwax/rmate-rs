@@ -1,6 +1,7 @@
 #![allow(clippy::module_name_repetitions)]
 use log::trace;
 use serde::Deserialize;
+use std::env;
 use std::ffi::OsString;
 use std::fs::canonicalize;
 use std::fs::File;
@@ -33,7 +34,7 @@ pub(crate) struct Settings {
     pub port: Option<u16>,
 
     #[allow(clippy::doc_markdown)]
-    /// Have TextMate retain window focus after file is closed
+    /// Have *TextMate* retain window focus after file is closed
     #[structopt(short, long)]
     pub keep: bool,
 
@@ -94,60 +95,100 @@ pub struct RcSettings {
 pub(crate) fn read_disk_settings() -> (String, u16) {
     trace!("Loading settings from rmate.rc files");
     let host_port = (self::RMATE_HOST.to_string(), self::RMATE_PORT);
-    ["/etc/rmate.rc", "/usr/local/etc/rmate.rc", "~/.rmate.rc"]
-        .iter()
-        .inspect(|path| {
-            trace!("Trying {}", path);
-        })
-        .map(|path| {
-            if path.starts_with("~/") && dirs::home_dir().is_some() {
-                canonicalize(dirs::home_dir().unwrap().join(&path[2..]))
+    // File precedence is from least specific to most specific, so later files
+    // override earlier files: system defaults, user defaults, then local project.
+    // Environment variables are applied after files because they are an explicit
+    // per-process override.
+    let disk_host_port = [
+        "/etc/rmate.rc",
+        "/usr/local/etc/rmate.rc",
+        "~/.rmate.rc",
+        "./.rmate.rc",
+    ]
+    .iter()
+    .inspect(|path| {
+        trace!("Trying {path}");
+    })
+    .map(|path| {
+        if path.starts_with("~/") && dirs::home_dir().is_some() {
+            canonicalize(dirs::home_dir().unwrap().join(&path[2..]))
+        } else {
+            canonicalize(path)
+        }
+    })
+    .inspect(|canon| {
+        if canon.is_err() {
+            trace!("  error: {}", canon.as_ref().unwrap_err());
+        } else {
+            trace!(
+                "  path was changed to: {}",
+                canon.as_ref().unwrap().to_string_lossy()
+            );
+        }
+    })
+    .filter(Result::is_ok)
+    .map(|canon| {
+        let path = canon.unwrap();
+        let fname = &Path::new(&path);
+        (File::open(fname), path)
+    })
+    .inspect(|(file_result, path)| {
+        if file_result.is_err() {
+            trace!("  Cannot open {}", path.display());
+        } else {
+            trace!("  Found rc file at: {}", path.display());
+        }
+    })
+    .filter(|(file_result, _)| file_result.is_ok())
+    .map(|(fp, path)| {
+        let buf_reader = BufReader::new(fp.unwrap());
+        (serde_yaml::from_reader(buf_reader), path)
+    })
+    .inspect(
+        |(s, path): &(Result<self::RcSettings, serde_yaml::Error>, PathBuf)| {
+            if s.is_err() {
+                trace!("  Error parsing data in {}", path.display());
+                trace!("    {:?}", s.as_ref().unwrap_err());
             } else {
-                canonicalize(path)
+                trace!(
+                    "  Read disk settings-> {{ host: {:?}\tport: {:?} }}",
+                    s.as_ref().unwrap().host.as_ref(),
+                    s.as_ref().unwrap().port.as_ref(),
+                );
             }
-        })
-        .filter(Result::is_ok)
-        .map(|canon| {
-            let path = canon.unwrap();
-            let fname = &Path::new(&path);
-            (File::open(fname), path)
-        })
-        .inspect(|(file_result, path)| {
-            if file_result.is_err() {
-                trace!("  Cannot open {}", path.display());
-            } else {
-                trace!("  Found rc file at: {}", path.display());
+        },
+    )
+    .filter(|(s, _)| s.is_ok())
+    .map(|(s, _)| s.unwrap())
+    .fold(host_port, |acc, item: self::RcSettings| {
+        let (mut newhost, mut newport) = acc;
+        if let Some(host) = item.host {
+            newhost = host;
+        }
+        if let Some(port) = item.port {
+            newport = port;
+        }
+        (newhost, newport)
+    });
+
+    let (mut host, mut port) = disk_host_port;
+
+    if let Ok(env_host) = env::var("RMATE_HOST") {
+        trace!("Overriding host from RMATE_HOST");
+        host = env_host;
+    }
+
+    if let Ok(env_port) = env::var("RMATE_PORT") {
+        match env_port.parse::<u16>() {
+            Ok(parsed_port) => {
+                trace!("Overriding port from RMATE_PORT");
+                port = parsed_port;
             }
-        })
-        .filter(|(file_result, _)| file_result.is_ok())
-        .map(|(fp, path)| {
-            let buf_reader = BufReader::new(fp.unwrap());
-            (serde_yaml::from_reader(buf_reader), path)
-        })
-        .inspect(
-            |(s, path): &(Result<self::RcSettings, serde_yaml::Error>, PathBuf)| {
-                if s.is_err() {
-                    trace!("  Error parsing data in {}", path.display());
-                    trace!("    {:?}", s.as_ref().unwrap_err());
-                } else {
-                    trace!(
-                        "  Read disk settings-> {{ host: {:?}\tport: {:?} }}",
-                        s.as_ref().unwrap().host.as_ref(),
-                        s.as_ref().unwrap().port.as_ref(),
-                    );
-                }
-            },
-        )
-        .filter(|(s, _)| s.is_ok())
-        .map(|(s, _)| s.unwrap())
-        .fold(host_port, |acc, item: self::RcSettings| {
-            let (mut newhost, mut newport) = acc;
-            if let Some(host) = item.host {
-                newhost = host;
+            Err(err) => {
+                trace!("Ignoring invalid RMATE_PORT={env_port:?}: {err}");
             }
-            if let Some(port) = item.port {
-                newport = port;
-            }
-            (newhost, newport)
-        })
+        }
+    }
+
+    (host, port)
 }

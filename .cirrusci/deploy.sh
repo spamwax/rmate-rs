@@ -4,7 +4,6 @@
 
 set -ex
 
-
 main() {
     local src
     src=$(pwd)
@@ -25,7 +24,7 @@ main() {
     "$ghr_exe" -t "${GITHUB_TOKEN}" -u "${CIRRUS_REPO_OWNER}" -r "${CIRRUS_REPO_NAME}" -c "${CIRRUS_SHA1}" -replace "${CIRRUS_TAG}" ${artifacts} || true
 }
 
-if [[ -n "$CIRRUS_TEST" || ( "$CIRRUS_BRANCH" == 'master' && -z "$CIRRUS_TAG" ) ]]; then
+if [[ -n "$CIRRUS_TEST" || ("$CIRRUS_BRANCH" == 'master' && -z "$CIRRUS_TAG") ]]; then
     echo "This is a test or marster commit, FreeBSD CI only builds tagged releases."
 elif [ -n "$CIRRUS_TAG" ]; then
     if [ -z "$GITHUB_TOKEN" ]; then
@@ -38,4 +37,3 @@ elif [ -n "$CIRRUS_TAG" ]; then
 else
     echo "Derp... (branch: ${CIRRUS_BRANCH})"
 fi
-
