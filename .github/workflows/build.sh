@@ -4,6 +4,8 @@ set -ex
 if [[ -z "$USE_CROSS" || "$USE_CROSS" == "false" ]]; then
     cargo_runner="cargo"
 else
+    export CROSS_DEBUG=1
+    export CROSS_NO_WARNINGS=0
     cargo_runner="cross"
 fi
 
