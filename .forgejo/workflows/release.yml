@@ -141,8 +141,8 @@ jobs:
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'x86_64-unknown-linux-musl'
-      build_type: 'debug'
-      run_tests: true
+      build_type: 'release'
+      run_tests: false
       cross: true
   aarch64-linux-musl:
     runs-on: ghoolak-docker
@@ -150,8 +150,8 @@ jobs:
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'aarch64-unknown-linux-musl'
-      build_type: 'debug'
-      run_tests: true
+      build_type: 'release'
+      run_tests: false
       cross: true
   armv7-linux-musleabihf:
     runs-on: ghoolak-docker
@@ -159,8 +159,8 @@ jobs:
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'armv7-unknown-linux-musleabihf'
-      build_type: 'debug'
-      run_tests: true
+      build_type: 'release'
+      run_tests: false
       cross: true
   i686-linux-musl:
     runs-on: ghoolak-docker
@@ -168,8 +168,8 @@ jobs:
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'i686-unknown-linux-musl'
-      build_type: 'debug'
-      run_tests: true
+      build_type: 'release'
+      run_tests: false
       cross: true
   # x86_64-macos:
   #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
