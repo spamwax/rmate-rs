@@ -53,20 +53,6 @@ jobs:
       arm: true
       build_type: 'release'
       run_tests: false
-  # x86_64-macos:
-  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
-  #   uses: ./.forgejo/workflows/reusable_macos.yml
-  #   with:
-  #     target: 'x86_64-apple-darwin'
-  #     build_type: 'release'
-  #     run_tests: false
-  # aarch64-macos:
-  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
-  #   uses: ./.forgejo/workflows/reusable_macos.yml
-  #   with:
-  #     target: 'aarch64-apple-darwin'
-  #     build_type: 'release'
-  #     run_tests: false
   x86_64-illumos:
     runs-on: ghoolak-docker
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-illumos,')) }}
@@ -148,6 +134,20 @@ jobs:
       build_type: 'release'
       run_tests: false
       cross: true
+  # x86_64-macos:
+  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+  #   uses: ./.forgejo/workflows/reusable_macos.yml
+  #   with:
+  #     target: 'x86_64-apple-darwin'
+  #     build_type: 'release'
+  #     run_tests: false
+  # aarch64-macos:
+  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
+  #   uses: ./.forgejo/workflows/reusable_macos.yml
+  #   with:
+  #     target: 'aarch64-apple-darwin'
+  #     build_type: 'release'
+  #     run_tests: false
 
   gh_release:
     name: Release rmate
