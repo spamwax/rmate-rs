@@ -78,6 +78,15 @@ jobs:
       build_type: 'debug'
       run_tests: true
       cross: true
+  i686-illumos:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-illumos,')
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'i686-unknown-illumos'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
   x86_64-linux-android:
     runs-on: ghoolak-docker
     if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux-android,')

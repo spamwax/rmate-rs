@@ -63,6 +63,15 @@ jobs:
       build_type: 'release'
       run_tests: false
       cross: true
+  i686-illumos:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-illumos,')
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'i686-unknown-illumos'
+      build_type: 'release'
+      run_tests: false
+      cross: true
   x86_64-linux-android:
     runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-linux-android,')) }}
@@ -195,6 +204,7 @@ jobs:
       - aarch64-linux
       - armv7-linux
       - x86_64-illumos
+      - i686-illumos
       - x86_64-linux-android
       - i686-linux-android
       - aarch64-linux-android
@@ -232,6 +242,9 @@ jobs:
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
           name: binary-artifact-x86_64-unknown-illumos
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-i686-unknown-illumos
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
           name: binary-artifact-x86_64-linux-android
