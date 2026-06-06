@@ -32,7 +32,7 @@ jobs:
     name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
     strategy:
       matrix:
-        os: [node:22-bookworm]
+        os: [forgejo-ci-rust:stable]
         rust: [stable]
     runs-on: ghoolak-docker
     container:
@@ -41,43 +41,15 @@ jobs:
       - uses: https://data.forgejo.org/actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install base packages
+      - name: Verify prebuilt Rust image
         run: |
-          apt-get update
-          apt-get install -y pcregrep curl ca-certificates build-essential
-      - name: Install arm compilers
-        if: ${{ inputs.arm }}
-        run: |
-          apt-get update
-          apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
-      - name: Install multilib compiler
-        if: ${{ inputs.target == 'i686-unknown-linux-gnu' }}
-        run: |
-          apt-get update
-          apt-get install -y gcc-multilib
-      - name: Install arm runner
-        if: ${{ inputs.arm && inputs.run_tests }}
-        run: |
-          apt-get update
-          apt-get install -y libc6-dev-armhf-cross qemu-user-static libc6-dev-arm64-cross
-
-      - name: Install Rust
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y \
-            --profile minimal \
-            --default-toolchain stable \
-            --target "${{ inputs.target }}"
-
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          . "$HOME/.cargo/env"
-
           rustc --version
           cargo --version
           rustup target list --installed
-
-      - name: Install Rust's cross
-        if: ${{ inputs.cross }}
-        run: cargo install cross --git https://github.com/cross-rs/cross
+          file --version
+          pcregrep -V
+          qemu-aarch64-static --version || true
+          qemu-arm-static --version || true
 
       - name: Build (${{ inputs.build_type }})
         run: ./.forgejo/workflows/build.sh
