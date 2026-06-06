@@ -211,6 +211,9 @@ jobs:
       # - aarch64-macos
 
     steps:
+      - uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          submodules: recursive
       # - uses: https://data.forgejo.org/actions/download-artifact@v3
       #   with:
       #     name: binary-artifact-x86_64-apple-darwin
