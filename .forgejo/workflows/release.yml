@@ -16,8 +16,8 @@ env:
   # Or use one/more job names, comma-wrapped:
   #   ",x86_64-freebsd,"
   #   ",x86_64-freebsd,x86_64-linux-android,"
-  # RELEASE_JOBS: ",all,"
-  RELEASE_JOBS: ",x86_64-linux-musl,"
+  RELEASE_JOBS: ",all,"
+  # RELEASE_JOBS: ",x86_64-linux-musl,"
 
 jobs:
   x86_64-linux:
