@@ -18,7 +18,7 @@ env:
   # Or use one/more job names, comma-wrapped:
   #   ",x86_64-freebsd,"
   #   ",x86_64-freebsd,x86_64-linux-android,"
-  CI_JOBS: ",x86_64-illumos,"
+  CI_JOBS: ",all,"
 
 jobs:
   x86_64-linux:
