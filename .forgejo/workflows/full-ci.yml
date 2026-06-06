@@ -150,6 +150,42 @@ jobs:
       build_type: 'debug'
       run_tests: true
       cross: true
+  x86_64-linux-musl:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux-musl,')
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'x86_64-unknown-linux-musl'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
+  aarch64-linux-musl:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',aarch64-linux-musl,')
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'aarch64-unknown-linux-musl'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
+  armv7-linux-musleabihf:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',armv7-linux-musleabihf,')
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'armv7-unknown-linux-musleabihf'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
+  i686-linux-musl:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',i686-linux-musl,')
+    uses: ./.forgejo/workflows/reusable_cross.yml
+    with:
+      target: 'i686-unknown-linux-musl'
+      build_type: 'debug'
+      run_tests: true
+      cross: true
 # x86_64-linux-musl:
 #   target: 'x86_64-unknown-linux-musl'
 
