@@ -7,14 +7,14 @@ fast, reliable implementation of **rmate** in Rust.
 
 Pre-complied binaries for following platforms are available in [Releases page](https://github.com/spamwax/rmate-rs/releases/latest).
 
-| Platform | CPU Architecture                               |
-|----------|------------------------------------------------|
-| macOS    | x86_64, aarch64                                |
-| Linux    | x86_64, i686, aarch64, armv7                   |
-| FreeBSD  | x86_64                                         |
-| Android  | x86_64, i686, aarch64, armv7, arm, thumbv7neon |
-| Illumos  | x86_64                                         |
-
+| Platform | CPU Architecture |
+|----------|------------------|
+| macOS | x86_64, aarch64 |
+| Linux GNU/glibc | x86_64, i686, aarch64, armv7 |
+| Linux musl | x86_64, i686, aarch64, armv7 |
+| FreeBSD | x86_64, i686 |
+| Android | x86_64, i686, aarch64, armv7, arm, thumbv7neon |
+| illumos | x86_64, i686 |
 ### Features
 
 - Support all options and rmate.rc settings described in [Ruby implementation](https://github.com/textmate/rmate).
