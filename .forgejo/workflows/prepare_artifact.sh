@@ -11,7 +11,9 @@ create_linux() {
         strip_cmd="/usr/bin/aarch64-linux-gnu-strip"
     elif [[ $TARGET == "armv7-unknown-linux-gnueabihf" ]]; then
         strip_cmd="/usr/bin/arm-linux-gnueabihf-strip"
-    elif [[ $TARGET == "x86_64-unknown-linux-gnu" || $TARGET == "i686-unknown-linux-gnu" || $TARGET == "x86_64-unknown-illumos" || $TARGET == "aarch64-unknown-illumos" || $TARGET == "x86_64-unknown-freebsd" || $TARGET == "i686-unknown-freebsd" ]]; then
+    elif [[ $TARGET == "x86_64-unknown-linux-gnu" || $TARGET == "i686-unknown-linux-gnu" || \
+        $TARGET == "x86_64-unknown-illumos" || \
+        $TARGET == "x86_64-unknown-freebsd" || $TARGET == "i686-unknown-freebsd" ]]; then
         strip_cmd=$(which strip)
     fi
 

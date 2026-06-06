@@ -15,7 +15,7 @@ env:
   # Or use one/more job names, comma-wrapped:
   #   ",x86_64-freebsd,"
   #   ",x86_64-freebsd,x86_64-linux-android,"
-  CI_JOBS: ",x86_64-linux,aarch64-illumos,"
+  CI_JOBS: ",x86_64-linux,x86_64-illumos,"
 
 jobs:
   x86_64-linux:
@@ -72,15 +72,6 @@ jobs:
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
       target: 'x86_64-unknown-illumos'
-      build_type: 'debug'
-      run_tests: true
-      cross: true
-  aarch64-illumos:
-    runs-on: ghoolak-docker
-    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',aarch64-illumos,')
-    uses: ./.forgejo/workflows/reusable_cross.yml
-    with:
-      target: 'aarch64-unknown-illumos'
       build_type: 'debug'
       run_tests: true
       cross: true

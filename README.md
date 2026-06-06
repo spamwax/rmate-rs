@@ -14,7 +14,7 @@ Pre-complied binaries for following platforms are available in [Releases page](h
 | Linux musl | x86_64, i686, aarch64, armv7 |
 | FreeBSD | x86_64, i686 |
 | Android | x86_64, i686, aarch64, armv7, arm, thumbv7neon |
-| illumos | x86_64, i686 |
+| illumos | x86_64 |
 ### Features
 
 - Support all options and rmate.rc settings described in [Ruby implementation](https://github.com/textmate/rmate).
