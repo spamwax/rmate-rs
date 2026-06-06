@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ ! -f Cargo.toml ]]; then
+    exit 0
+fi
+
+cargo_version="$(
+    cargo metadata --no-deps --format-version 1 |
+    jq -r '.packages[0].version'
+)"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    case "$remote_ref" in
+        refs/tags/v*)
+            tag_version="${remote_ref#refs/tags/v}"
+
+            if [[ "$tag_version" != "$cargo_version" ]]; then
+                cat >&2 <<EOF
+
+Refusing to push tag $remote_ref
+
+Cargo.toml version: $cargo_version
+Tag version:        $tag_version
+
+Run something like:
+
+    cargo set-version $tag_version
+    git add Cargo.toml Cargo.lock
+    git commit -m "Bump version to $tag_version"
+    git tag -f v$tag_version
+
+EOF
+                exit 1
+            fi
+            ;;
+    esac
+done
+
+#!/usr/bin/env bash
+set -euo pipefail
+
+zero_sha="0000000000000000000000000000000000000000"
+
+cargo_version_at_ref() {
+    local ref=$1
+
+    git show "${ref}^{commit}:Cargo.toml" |
+        awk '
+            $0 ~ /^\[package\]/ { in_package = 1; next }
+            $0 ~ /^\[/ && in_package { exit }
+            in_package && $1 == "version" {
+                gsub(/"/, "", $3)
+                print $3
+                exit
+            }
+        '
+}
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    case "$remote_ref" in
+        refs/tags/v*)
+            # Tag deletion. Nothing to validate.
+            if [[ "$local_sha" == "$zero_sha" ]]; then
+                continue
+            fi
+
+            tag_version="${remote_ref#refs/tags/v}"
+            cargo_version="$(cargo_version_at_ref "$local_sha")"
+
+            if [[ -z "$cargo_version" ]]; then
+                cat >&2 <<EOF
+
+Refusing to push tag $remote_ref
+
+Could not read package.version from Cargo.toml at:
+
+    $local_ref ($local_sha)
+
+EOF
+                exit 1
+            fi
+
+            if [[ "$tag_version" != "$cargo_version" ]]; then
+                cat >&2 <<EOF
+
+Refusing to push tag $remote_ref
+
+Cargo.toml version at tagged commit: $cargo_version
+Tag version:                        $tag_version
+
+Fix by moving the tag to a commit whose Cargo.toml has the matching version, for example:
+
+    cargo set-version $tag_version
+    git add Cargo.toml Cargo.lock
+    git commit -m "Bump version to $tag_version"
+    git tag -f v$tag_version
+
+EOF
+                exit 1
+            fi
+            ;;
+    esac
+done
