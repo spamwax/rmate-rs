@@ -1,0 +1,16 @@
+# .yamllint
+---
+extends: default
+
+rules:
+  document-start: disable
+
+  truthy:
+    check-keys: false
+    allowed-values:
+      - "true"
+      - "false"
+
+  line-length:
+    max: 260
+    level: warning
