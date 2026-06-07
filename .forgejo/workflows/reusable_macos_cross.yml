@@ -62,11 +62,11 @@ jobs:
           flock /srv/forgejo-runner-cache/rust/rustup-install.lock \
             ./.forgejo/workflows/build.sh
 
-      - name: Ensure FreeBSD/illumos VM is running
-        if: ${{ inputs.run_tests && (contains(inputs.target, 'freebsd') || contains(inputs.target, 'illumos')) }}
-        run: ./.forgejo/workflows/ensure_vm_ready.sh "${{ inputs.target }}"
+      - name: Ensure macOS VM is running
+        if: ${{ inputs.run_tests && contains(inputs.target, 'macos') }}
+        run: /srv/forgejo-runner/bin/wait-macos-ci
 
-      - name: Run test
+      - name: Run tests
         if: ${{ inputs.run_tests }}
         run: |
           flock /srv/forgejo-runner-cache/rust/rustup-install.lock \

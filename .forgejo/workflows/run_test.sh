@@ -43,7 +43,9 @@ show_context() {
     echo "on runner"
     pwd
     ls -la
+    echo "========"
     ls -l "$binary_path"
+    file "$binary_path"
     echo "========"
 }
 
@@ -66,6 +68,13 @@ show_output_and_exit_ok() {
 
 FREEBSD_VM_HOST="freebsd-14.3"
 ILLUMOS_VM_HOST="omnios-r151058"
+MACOS_VM_HOST="macos-sonoma-ci"
+
+prepare_mac_os() {
+    ssh "$MACOS_VM_HOST" "source ~/.zprofile; brew install pcre2"
+    ssh "$MACOS_VM_HOST" "source ~/.zprofile; rustc --version"
+}
+
 run_vm_test() {
     local vm_type=$1
     local remote_dir="/tmp/rmate-ci-${GITHUB_RUN_ID:-manual}-${TARGET}"
@@ -75,6 +84,8 @@ run_vm_test() {
         vm_host="$FREEBSD_VM_HOST"
     elif [[ "$vm_type" == *illumos* ]]; then
         vm_host="$ILLUMOS_VM_HOST"
+    elif [[ "$vm_type" == *macos* ]]; then
+        vm_host="$MACOS_VM_HOST"
     else
         printf "${RED}%s${NC}\n" "No VM available for $vm_type"
         exit 1
@@ -86,7 +97,8 @@ run_vm_test() {
     ssh "$vm_host" "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
     scp "$binary_path" "$vm_host:$remote_dir/rmate"
     scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:$remote_dir/.rmate.rc"
-    scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:/home/forgejo/.rmate.rc"
+    # scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:\$HOME/.rmate.rc"
+    scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:~/.rmate.rc"
     scp Cargo.toml "$vm_host:$remote_dir/Cargo.toml"
 
     # shellcheck disable=SC2029
@@ -183,6 +195,10 @@ case "$TARGET" in
         ;;
     *freebsd*)
         run_vm_test freebsd
+        ;;
+    *apple*)
+        prepare_mac_os
+        run_vm_test macos-sonoma-ci
         ;;
     aarch64-unknown-linux-gnu|armv7-unknown-linux-gnueabihf)
         if [[ "${ARM:-false}" == "true" ]]; then

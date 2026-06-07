@@ -26,6 +26,9 @@ env:
   USE_CROSS: ${{ inputs.cross }}
   RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
   CROSS_NO_WARNINGS: "0"
+  CARGO_NET_RETRY: "10"
+  CARGO_HTTP_TIMEOUT: "120"
+  CARGO_HTTP_MULTIPLEXING: "false"
 
 jobs:
   build:

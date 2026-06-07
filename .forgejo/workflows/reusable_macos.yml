@@ -24,26 +24,23 @@ env:
 
 jobs:
   build:
+    runs-on: ghoolak-host
     name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [macos-sonoma]
         rust: [stable]
-    runs-on: ${{ matrix.os }}
     steps:
+      - name: Wait for macOS VM
+        run: /srv/forgejo-runner/bin/wait-macos-ci
+
       - uses: https://data.forgejo.org/actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install pcregrep
-        run: |
-          brew install pcre2
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ inputs.target }}
-          override: true
+
+      # - name: Check for tools (rust, pcregrep, zip)
+      #   run: .forgejo/workflows/check_macos_tools.sh
+
       - name: Build (${{ inputs.build_type }})
         run: .forgejo/workflows/build.sh
 
@@ -52,15 +49,22 @@ jobs:
         run: .forgejo/workflows/run_test.sh
 
       - name: Prepare release artifact
-        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        if: ${{ github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && matrix.rust == 'stable') }}
         run: |
           .forgejo/workflows/prepare_artifact.sh
       - name: Upload for release
         id: upload_artifact
-        uses: actions/upload-artifact@v4
-        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        if: ${{ github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && matrix.rust == 'stable') }}
+        uses: https://data.forgejo.org/actions/upload-artifact@v3
         with:
           name: binary-artifact-${{ inputs.target }}
           path: |
             rmate_${{ inputs.target }}.zip
           if-no-files-found: warn
+# - name: Install Rust
+#   uses: actions-rs/toolchain@v1
+#   with:
+#     profile: minimal
+#     toolchain: stable
+#     target: ${{ inputs.target }}
+#     override: true

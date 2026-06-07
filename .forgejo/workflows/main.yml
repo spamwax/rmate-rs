@@ -15,7 +15,7 @@ env:
   # Or use one/more job names, comma-wrapped:
   #   ",x86_64-freebsd,"
   #   ",x86_64-freebsd,x86_64-linux-android,"
-  CI_JOBS: ",x86_64-linux,thumbv7neon-linux-android,"
+  CI_JOBS: ",x86_64-linux,x86_64-illumos,aarch64-macos,x86_64-macos,"
 
 jobs:
   x86_64-linux:
@@ -52,20 +52,22 @@ jobs:
       arm: true
       build_type: 'debug'
       run_tests: true
-  # x86_64-macos:
-  #   if: ${{ github.ref_type != 'tag' }}
-  #   uses: ./.forgejo/workflows/reusable_macos.yml
-  #   with:
-  #     target: 'x86_64-apple-darwin'
-  #     build_type: 'debug'
-  #     run_tests: true
-  # aarch64-macos:
-  #   if: ${{ github.ref_type != 'tag' }}
-  #   uses: ./.forgejo/workflows/reusable_macos.yml
-  #   with:
-  #     target: 'aarch64-apple-darwin'
-  #     build_type: 'debug'
-  #     run_tests: false
+  x86_64-macos:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-macos,')
+    uses: ./.forgejo/workflows/reusable_macos.yml
+    with:
+      target: 'x86_64-apple-darwin'
+      build_type: 'debug'
+      run_tests: true
+  aarch64-macos:
+    runs-on: ghoolak-docker
+    if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',aarch64-macos,')
+    uses: ./.forgejo/workflows/reusable_macos.yml
+    with:
+      target: 'aarch64-apple-darwin'
+      build_type: 'debug'
+      run_tests: false
   x86_64-illumos:
     runs-on: ghoolak-docker
     if: contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-illumos,')
