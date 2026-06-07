@@ -273,12 +273,13 @@ jobs:
         with:
           name: binary-artifact-i686-unknown-linux-musl
       # - run: ls -la /home/runner/work/rmate-rs/rmate-rs || true
-      - name: Show downloaded release files
+      - name: Make universal binary on macOS
         run: |
           echo "pwd=$(pwd)"
           echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
           find . -maxdepth 3 -type f -name 'rmate_*' -ls
           ls -la "$GITHUB_WORKSPACE" || true
+          .forgejo/workflows/make_universal_macos.sh
       - uses: https://github.com/softprops/action-gh-release@v2.6.2
         with:
           fail_on_unmatched_files: false
