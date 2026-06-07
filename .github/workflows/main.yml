@@ -60,7 +60,7 @@ jobs:
     with:
       target: 'aarch64-apple-darwin'
       build_type: 'debug'
-      run_tests: false
+      run_tests: true
   x86_64-illumos:
     if: ${{ github.ref_type != 'tag' }}
     uses: ./.github/workflows/reusable_linux.yml

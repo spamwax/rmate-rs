@@ -24,26 +24,20 @@ env:
 
 jobs:
   build:
-    name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
-    strategy:
-      matrix:
-        os: [macos-latest]
-        rust: [stable]
-    runs-on: ${{ matrix.os }}
+    name: macos-${{ inputs.target }} (${{ inputs.build_type }})
+    runs-on: ${{ inputs.target == 'x86_64-apple-darwin' && 'macos-15-intel' || 'macos-latest' }}
+
     steps:
       - uses: actions/checkout@v5
         with:
           submodules: recursive
+
       - name: Install pcregrep
-        run: |
-          brew install pcre2
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ inputs.target }}
-          override: true
+        run: brew install pcre2
+
+      - name: Install Rust target
+        run: rustup target add "${{ inputs.target }}"
+
       - name: Build (${{ inputs.build_type }})
         run: .github/workflows/build.sh
 
@@ -52,13 +46,13 @@ jobs:
         run: .github/workflows/run_test.sh
 
       - name: Prepare release artifact
-        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
-        run: |
-          .github/workflows/prepare_artifact.sh
+        if: ${{ github.ref_type == 'tag' }}
+        run: .github/workflows/prepare_artifact.sh
+
       - name: Upload for release
         id: upload_artifact
+        if: ${{ github.ref_type == 'tag' }}
         uses: actions/upload-artifact@v4
-        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
         with:
           name: binary-artifact-${{ inputs.target }}
           path: |
