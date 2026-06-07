@@ -9,7 +9,7 @@ Pre-complied binaries for following platforms are available in [Releases page](h
 
 | Platform | CPU Architecture |
 |----------|------------------|
-| macOS | x86_64, aarch64 |
+| macOS | x86_64, aarch64, universal |
 | Linux GNU/glibc | x86_64, i686, aarch64, armv7 |
 | Linux musl | x86_64, i686, aarch64, armv7 |
 | FreeBSD | x86_64, i686 |
