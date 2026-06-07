@@ -172,6 +172,7 @@ jobs:
       run_tests: false
       cross: true
   x86_64-macos:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-macos,')) }}
     uses: ./.forgejo/workflows/reusable_macos.yml
     with:
@@ -179,6 +180,7 @@ jobs:
       build_type: 'release'
       run_tests: false
   aarch64-macos:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-macos,')) }}
     uses: ./.forgejo/workflows/reusable_macos.yml
     with:

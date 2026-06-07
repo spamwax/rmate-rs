@@ -7,7 +7,7 @@ NC='\033[0m'
 
 # 2. Capture the initial state of build_type (passed from Forgejo environment)
 # If not set by your pipeline engine, it defaults to "debug"
-INITIAL_BUILD_TYPE="${build_type:-debug}"
+INITIAL_BUILD_TYPE="${BUILD_TYPE:-${build_type:-debug}}"
 
 # 3. Separate your folder path directory from your actual compiler flag
 if [[ "$INITIAL_BUILD_TYPE" == "release" ]]; then
@@ -103,4 +103,3 @@ case "$TARGET" in
         build_non_macos
         ;;
 esac
-

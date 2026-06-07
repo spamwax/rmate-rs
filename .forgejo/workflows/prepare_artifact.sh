@@ -22,13 +22,13 @@ create_linux() {
         strip_cmd=$(which strip)
     fi
 
-    cp "$binary_path" ./rmate || true
+    cp "$binary_path" ./rmate
     echo "Before strip:"
     ls -l "$binary_path"
     if [[ -n "$strip_cmd" && -x "$strip_cmd" ]]; then
         "$strip_cmd" rmate || true
         echo "After strip:"
-        ls -l "$binary_path"
+        ls -l rmate
     fi
 
     tar czvf "$artifacts" rmate
@@ -42,7 +42,7 @@ create_macos() {
 
     # FIXED: The binary was already natively stripped on the macOS VM during the build step,
     # or it should be skipped here on Linux to avoid file corruption.
-    cp "$binary_path" ./rmate || true
+    cp "$binary_path" ./rmate
 
     zip "$artifacts" rmate
     rm -f rmate
