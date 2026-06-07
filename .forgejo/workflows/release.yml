@@ -171,20 +171,20 @@ jobs:
       build_type: 'release'
       run_tests: false
       cross: true
-  # x86_64-macos:
-  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
-  #   uses: ./.forgejo/workflows/reusable_macos.yml
-  #   with:
-  #     target: 'x86_64-apple-darwin'
-  #     build_type: 'release'
-  #     run_tests: false
-  # aarch64-macos:
-  #   if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
-  #   uses: ./.forgejo/workflows/reusable_macos.yml
-  #   with:
-  #     target: 'aarch64-apple-darwin'
-  #     build_type: 'release'
-  #     run_tests: false
+  x86_64-macos:
+    if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-macos,')) }}
+    uses: ./.forgejo/workflows/reusable_macos.yml
+    with:
+      target: 'x86_64-apple-darwin'
+      build_type: 'release'
+      run_tests: false
+  aarch64-macos:
+    if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-macos,')) }}
+    uses: ./.forgejo/workflows/reusable_macos.yml
+    with:
+      target: 'aarch64-apple-darwin'
+      build_type: 'release'
+      run_tests: false
 
   gh_release:
     name: Release rmate
@@ -207,19 +207,19 @@ jobs:
       - aarch64-linux-musl
       - armv7-linux-musleabihf
       - i686-linux-musl
-      # - x86_64-macos
-      # - aarch64-macos
+      - x86_64-macos
+      - aarch64-macos
 
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
         with:
           submodules: recursive
-      # - uses: https://data.forgejo.org/actions/download-artifact@v3
-      #   with:
-      #     name: binary-artifact-x86_64-apple-darwin
-      # - uses: https://data.forgejo.org/actions/download-artifact@v3
-      #   with:
-      #     name: binary-artifact-aarch64-apple-darwin
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-x86_64-apple-darwin
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-aarch64-apple-darwin
       - uses: https://data.forgejo.org/actions/download-artifact@v3
         with:
           name: binary-artifact-x86_64-unknown-linux-gnu
