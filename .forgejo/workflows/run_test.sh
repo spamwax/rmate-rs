@@ -97,7 +97,6 @@ run_vm_test() {
     ssh "$vm_host" "rm -rf '$remote_dir' && mkdir -p '$remote_dir'"
     scp "$binary_path" "$vm_host:$remote_dir/rmate"
     scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:$remote_dir/.rmate.rc"
-    # scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:\$HOME/.rmate.rc"
     scp "$GITHUB_WORKSPACE/.rmate.rc" "$vm_host:~/.rmate.rc"
     scp Cargo.toml "$vm_host:$remote_dir/Cargo.toml"
 
@@ -112,6 +111,9 @@ run_vm_test() {
 
     assert_output_contains "Connection refused (os error " 10
     assert_output_contains "Read disk settings-> { host: Some(" 11
+
+    # shellcheck disable=2029
+    ssh "$vm_host" "rm -rf '$remote_dir' ~/.rmate.rc" || true
     show_output_and_exit_ok
 }
 

@@ -60,3 +60,6 @@ make_it_fat
 
 scp "$MACOS_VM_HOST:$remote_workdir/$artifact_name" "$GITHUB_WORKSPACE/"
 ls -l "$GITHUB_WORKSPACE/$artifact_name"
+
+echo "Cleaning remote macOS universal build directory..."
+run_on_macos "rm -rf '$remote_dir'"

@@ -64,7 +64,7 @@ build_on_macos() {
 
     echo "Building binary with Cargo on macOS..."
     # FIXED: Uses the correct $cargo_flag separation
-    run_on_macos "cd \"$remote_dir/rmate-rs\" && cargo build --target $TARGET $cargo_flag"
+    run_on_macos "cd \"$remote_dir/rmate-rs\" && cargo build --target \"$TARGET\" $cargo_flag"
     run_on_macos "cd \"$remote_dir/rmate-rs\" && ls -l $binary_path && strip $binary_path && ls -l $binary_path"
 
     echo "Downloading binary artifact back to local workspace..."
@@ -72,6 +72,9 @@ build_on_macos() {
 
     # FIXED: Paths resolve to .../release/rmate or .../debug/rmate flawlessly
     scp "$MACOS_VM_HOST:$remote_dir/rmate-rs/$binary_path" "$GITHUB_WORKSPACE/$binary_folder/"
+
+    echo "Cleaning remote macOS build directory..."
+    run_on_macos "rm -rf \"$remote_dir\""
 }
 
 show_context() {
