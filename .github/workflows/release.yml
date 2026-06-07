@@ -1,7 +1,7 @@
 on:
   push:
     tags:
-      - '*'
+      - "*"
   workflow_dispatch:
   # For quickly detecting important differences in runner configurations
 
@@ -18,108 +18,122 @@ jobs:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'x86_64-unknown-linux-gnu'
-      build_type: 'release'
+      target: "x86_64-unknown-linux-gnu"
+      build_type: "release"
       run_tests: false
   i686-linux:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'i686-unknown-linux-gnu'
-      build_type: 'release'
+      target: "i686-unknown-linux-gnu"
+      build_type: "release"
       run_tests: false
   aarch64-linux:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'aarch64-unknown-linux-gnu'
+      target: "aarch64-unknown-linux-gnu"
       arm: true
-      build_type: 'release'
+      build_type: "release"
       run_tests: false
   armv7-linux:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'armv7-unknown-linux-gnueabihf'
+      target: "armv7-unknown-linux-gnueabihf"
       arm: true
-      build_type: 'release'
+      build_type: "release"
       run_tests: false
   x86_64-macos:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_macos.yml
     with:
-      target: 'x86_64-apple-darwin'
-      build_type: 'release'
+      target: "x86_64-apple-darwin"
+      build_type: "release"
       run_tests: false
   aarch64-macos:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_macos.yml
     with:
-      target: 'aarch64-apple-darwin'
-      build_type: 'release'
+      target: "aarch64-apple-darwin"
+      build_type: "release"
       run_tests: false
   x86_64-illumos:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'x86_64-unknown-illumos'
-      build_type: 'release'
+      target: "x86_64-unknown-illumos"
+      build_type: "release"
       run_tests: false
       cross: true
   x86_64-linux-android:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'x86_64-linux-android'
-      build_type: 'release'
+      target: "x86_64-linux-android"
+      build_type: "release"
       run_tests: false
       cross: true
   i686-linux-android:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'i686-linux-android'
-      build_type: 'release'
+      target: "i686-linux-android"
+      build_type: "release"
       run_tests: false
       cross: true
   aarch64-linux-android:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'aarch64-linux-android'
-      build_type: 'release'
+      target: "aarch64-linux-android"
+      build_type: "release"
       run_tests: false
       cross: true
   armv7-linux-android:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'armv7-linux-androideabi'
-      build_type: 'release'
+      target: "armv7-linux-androideabi"
+      build_type: "release"
       run_tests: false
       cross: true
   arm-linux-android:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'arm-linux-androideabi'
-      build_type: 'release'
+      target: "arm-linux-androideabi"
+      build_type: "release"
       run_tests: false
       cross: true
   thumbv7neon-linux-android:
     if: ${{ github.ref_type == 'tag' && github.ref_name != 'master' }}
     uses: ./.github/workflows/reusable_linux.yml
     with:
-      target: 'thumbv7neon-linux-androideabi'
-      build_type: 'release'
+      target: "thumbv7neon-linux-androideabi"
+      build_type: "release"
       run_tests: false
       cross: true
-
 
   gh_release:
     name: Release rmate
     runs-on: ubuntu-latest
-    needs: [x86_64-linux, i686-linux, aarch64-linux, armv7-linux, x86_64-macos, aarch64-macos, x86_64-illumos, x86_64-linux-android, i686-linux-android, aarch64-linux-android, armv7-linux-android, arm-linux-android, thumbv7neon-linux-android]
+    needs:
+      [
+        x86_64-linux,
+        i686-linux,
+        aarch64-linux,
+        armv7-linux,
+        x86_64-macos,
+        aarch64-macos,
+        x86_64-illumos,
+        x86_64-linux-android,
+        i686-linux-android,
+        aarch64-linux-android,
+        armv7-linux-android,
+        arm-linux-android,
+        thumbv7neon-linux-android,
+      ]
     steps:
       - uses: actions/download-artifact@v5
         with:
