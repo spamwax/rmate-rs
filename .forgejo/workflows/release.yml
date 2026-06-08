@@ -21,6 +21,7 @@ env:
 
 jobs:
   x86_64-linux:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-linux,')) }}
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
@@ -28,6 +29,7 @@ jobs:
       build_type: 'release'
       run_tests: false
   i686-linux:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',i686-linux,')) }}
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
@@ -35,6 +37,7 @@ jobs:
       build_type: 'release'
       run_tests: false
   aarch64-linux:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-linux,')) }}
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
@@ -43,6 +46,7 @@ jobs:
       build_type: 'release'
       run_tests: false
   armv7-linux:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',armv7-linux,')) }}
     uses: ./.forgejo/workflows/reusable_linux.yml
     with:
@@ -51,6 +55,7 @@ jobs:
       build_type: 'release'
       run_tests: false
   x86_64-illumos:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-illumos,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -59,6 +64,7 @@ jobs:
       run_tests: false
       cross: true
   x86_64-linux-android:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-linux-android,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -67,6 +73,7 @@ jobs:
       run_tests: false
       cross: true
   i686-linux-android:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',i686-linux-android,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -75,6 +82,7 @@ jobs:
       run_tests: false
       cross: true
   aarch64-linux-android:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-linux-android,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -83,6 +91,7 @@ jobs:
       run_tests: false
       cross: true
   armv7-linux-android:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',armv7-linux-android,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -91,6 +100,7 @@ jobs:
       run_tests: false
       cross: true
   arm-linux-android:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',arm-linux-android,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -99,6 +109,7 @@ jobs:
       run_tests: false
       cross: true
   thumbv7neon-linux-android:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',thumbv7neon-linux-android,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -107,6 +118,7 @@ jobs:
       run_tests: false
       cross: true
   x86_64-freebsd:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-freebsd,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -115,6 +127,7 @@ jobs:
       run_tests: false
       cross: true
   i686-unknown-freebsd:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',i686-unknown-freebsd,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -123,6 +136,7 @@ jobs:
       run_tests: false
       cross: true
   x86_64-linux-musl:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-linux-musl,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -131,6 +145,7 @@ jobs:
       run_tests: false
       cross: true
   aarch64-linux-musl:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-linux-musl,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -139,6 +154,7 @@ jobs:
       run_tests: false
       cross: true
   armv7-linux-musleabihf:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',armv7-linux-musleabihf,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -147,6 +163,7 @@ jobs:
       run_tests: false
       cross: true
   i686-linux-musl:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',i686-linux-musl,')) }}
     uses: ./.forgejo/workflows/reusable_cross.yml
     with:
@@ -155,6 +172,7 @@ jobs:
       run_tests: false
       cross: true
   x86_64-macos:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',x86_64-macos,')) }}
     uses: ./.forgejo/workflows/reusable_macos.yml
     with:
@@ -162,6 +180,7 @@ jobs:
       build_type: 'release'
       run_tests: false
   aarch64-macos:
+    runs-on: ghoolak-docker
     if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',aarch64-macos,')) }}
     uses: ./.forgejo/workflows/reusable_macos.yml
     with:

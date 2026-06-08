@@ -15,6 +15,9 @@ on:
       cross:  # Indicate if https://crates.io/crates/cross is needed
         type: boolean
         default: false
+      arm:
+        type: boolean
+        default: false
 
 env:
   ARM: ${{ inputs.arm }}
