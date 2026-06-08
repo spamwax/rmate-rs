@@ -312,12 +312,15 @@ jobs:
           find . -maxdepth 3 -type f -name 'rmate_*' -ls
           echo "==================================="
           ls -la "$GITHUB_WORKSPACE" || true
-      - uses: https://github.com/softprops/action-gh-release@v2.6.2
+      # - uses: https://github.com/softprops/action-gh-release@v2.6.2
+      #   with:
+      #     fail_on_unmatched_files: false
+      #     files: |
+      #       rmate_*.tar.gz
+      #       rmate_*.zip
+      - uses: https://github.com/ncipollo/release-action@v1
         with:
-          fail_on_unmatched_files: false
-          files: |
-            rmate_*.tar.gz
-            rmate_*.zip
+          artifacts: "rmate_*.tar.gz,rmate_*.zip"
       - name: Install github CLI
         if: ${{ github.ref_type == 'tag' }}
         run: |
