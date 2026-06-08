@@ -3,7 +3,7 @@ name: Reusable workflow for linux
 on:
   workflow_call:
     inputs:
-      target:
+      targets:
         required: true
         type: string
       arm:
@@ -56,8 +56,6 @@ jobs:
 
       - name: Build (${{ inputs.build_type }})
         run: ./.forgejo/workflows/build_batch.sh
-        with:
-          targets: ${{ env.TARGETS }}
 
       - name: Run test
         if: ${{ inputs.run_tests }}
