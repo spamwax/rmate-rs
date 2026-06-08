@@ -321,6 +321,7 @@ jobs:
       - uses: https://github.com/ncipollo/release-action@v1
         with:
           artifacts: "rmate_*.tar.gz,rmate_*.zip"
+          name: ${{ github.ref_name }}
       - name: Install github CLI
         if: ${{ github.ref_type == 'tag' }}
         run: |
