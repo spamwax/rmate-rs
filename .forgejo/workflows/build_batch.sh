@@ -65,4 +65,4 @@ printf '%s\n' "${targets[@]}" |
     parallel --jobs "$BUILD_JOBS" --halt soon,fail=1 --line-buffer build_one_target {}
 
 echo
-echo "All batched Linux builds completed successfully."
+echo "All batched Linux builds completed successfully. (concurrency: $BUILD_JOBS)"
