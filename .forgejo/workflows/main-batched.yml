@@ -1,0 +1,34 @@
+on:
+  push:
+    branches:
+      - develop
+      - job-batches
+  workflow_dispatch:
+  # For quickly detecting important differences in runner configurations
+
+name: Quick tests on select targets
+
+env:
+  OSX_SDK_VERSION: 11.1
+  RUST_BACKTRACE: "1"
+
+  # Use ",all," to run everything.
+  # Or use one/more job names, comma-wrapped:
+  #   ",x86_64-freebsd,"
+  #   ",x86_64-freebsd,x86_64-linux-android,"
+  # CI_JOBS: ",thumbv7neon-linux-android,x86_64-illumos,x86_64-macos,"
+  CI_JOBS: ",x86_64-illumos,"
+
+jobs:
+  linux-batch:
+    runs-on: ghoolak-docker
+    if: ${{ contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux,') }}
+    uses: ./.forgejo/workflows/reusable_linux_batch.yml
+    with:
+      targets: |
+        x86_64-unknown-linux-gnu
+        i686-unknown-linux-gnu
+        aarch64-unknown-linux-gnu
+        armv7-unknown-linux-gnueabihf"
+      build_type: "debug"
+      run_tests: true
