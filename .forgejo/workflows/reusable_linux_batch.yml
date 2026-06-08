@@ -55,10 +55,10 @@ jobs:
           qemu-aarch64-static --version || true
           qemu-arm-static --version || true
 
-      - name: Build (${{ inputs.build_type }})
+      - name: Build (${{ inputs.build_type }}) in batch mode
         run: ./.forgejo/workflows/build_batch.sh
 
-      - name: Run test
+      - name: Run tests
         if: ${{ inputs.run_tests }}
         run: .forgejo/workflows/run_test_batch.sh
 
