@@ -72,7 +72,7 @@ jobs:
         uses: https://data.forgejo.org/actions/upload-artifact@v3
         if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
         with:
-          name: binary-artifact-${{ inputs.target }}
+          name: binary-artifact-linux-batch
           path: |
             rmate_*.tar.gz
-          if-no-files-found: warn
+          if-no-files-found: error

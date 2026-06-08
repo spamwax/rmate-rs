@@ -1,0 +1,77 @@
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+  # For quickly detecting important differences in runner configurations
+
+name: release
+
+env:
+  RELEASE: ${{ github.ref_type == 'tag' }}
+  OSX_SDK_VERSION: 11.1
+  RUST_BACKTRACE: "1"
+
+  # Use ",all," to run everything.
+  # Or use one/more job names, comma-wrapped:
+  #   ",x86_64-freebsd,"
+  #   ",x86_64-freebsd,x86_64-linux-android,"
+  RELEASE_JOBS: ",linux,"
+  # RELEASE_JOBS: ",x86_64-linux-musl,"
+
+jobs:
+  linux-batch:
+    runs-on: ghoolak-docker
+    if: ${{ (github.event_name == 'workflow_dispatch' || (github.ref_type == 'tag' && github.ref_name != 'master')) && (contains(env.RELEASE_JOBS, ',all,') || contains(env.RELEASE_JOBS, ',linux,')) }}
+    uses: ./.forgejo/workflows/reusable_linux_batch.yml
+    with:
+      targets: |
+        x86_64-unknown-linux-gnu
+        i686-unknown-linux-gnu
+        aarch64-unknown-linux-gnu
+        armv7-unknown-linux-gnueabihf
+      build_type: 'release'
+      run_tests: false
+
+  gh_release:
+    name: Release rmate
+    runs-on: ghoolak-docker
+    needs:
+      - linux-batch
+
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: https://data.forgejo.org/actions/download-artifact@v3
+        with:
+          name: binary-artifact-linux-batch
+      # - run: ls -la /home/runner/work/rmate-rs/rmate-rs || true
+      - name: List all artifacts
+        run: |
+          echo "pwd=$(pwd)"
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          find . -maxdepth 3 -type f -name 'rmate_*' -ls
+          echo "==================================="
+          ls -la "$GITHUB_WORKSPACE" || true
+      # - uses: https://github.com/softprops/action-gh-release@v2.6.2
+      #   with:
+      #     fail_on_unmatched_files: false
+      #     files: |
+      #       rmate_*.tar.gz
+      #       rmate_*.zip
+      - uses: https://github.com/ncipollo/release-action@v1
+        with:
+          artifacts: "rmate_*.tar.gz,rmate_*.zip"
+          name: ${{ github.ref_name }}
+      - name: Install github CLI
+        if: ${{ github.ref_type == 'tag' }}
+        run: |
+          apt update
+          apt install gh jq -y
+      - name: Sync missing Forgejo-built assets to GitHub release
+        if: ${{ github.ref_type == 'tag' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_RELEASE_TOKEN }}
+          GITHUB_REPO: spamwax/rmate-rs
+        run: ./.forgejo/workflows/sync_github_release.sh
