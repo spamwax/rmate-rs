@@ -17,12 +17,12 @@ env:
   #   ",x86_64-freebsd,"
   #   ",x86_64-freebsd,x86_64-linux-android,"
   # CI_JOBS: ",thumbv7neon-linux-android,x86_64-illumos,x86_64-macos,"
-  CI_JOBS: ",x86_64-illumos,"
+  CI_JOBS: ",linux,"
 
 jobs:
   linux-batch:
     runs-on: ghoolak-docker
-    if: ${{ contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',x86_64-linux,') }}
+    if: ${{ contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',linux,') }}
     uses: ./.forgejo/workflows/reusable_linux_batch.yml
     with:
       targets: |
