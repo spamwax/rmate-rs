@@ -158,25 +158,48 @@ run_native_test() {
     show_output_and_exit_ok
 }
 
-run_arm_linux_qemu_test() {
+run_linux_qemu_test() {
     echo "Running ${GREEN}$TARGET${NC} binary using QEMU."
 
     local libpath
-    local arm_runner
+    local qemu_runner
 
-    if [[ "$TARGET" == "aarch64-unknown-linux-gnu" ]]; then
-        libpath="/usr/aarch64-linux-gnu"
-        export LD_LIBRARY_PATH=$libpath/lib64
-        arm_runner="qemu-aarch64-static"
-    else
-        libpath="/usr/arm-linux-gnueabihf"
-        export LD_LIBRARY_PATH=$libpath/lib
-        arm_runner="qemu-arm-static"
+    case "$TARGET" in
+        x86_64-unknown-linux-gnu)
+            libpath="/usr/x86_64-linux-gnu"
+            qemu_runner="qemu-x86_64-static"
+            ;;
+        i686-unknown-linux-gnu)
+            libpath="/usr/i686-linux-gnu"
+            qemu_runner="qemu-i386-static"
+            ;;
+        aarch64-unknown-linux-gnu)
+            libpath="/usr/aarch64-linux-gnu"
+            qemu_runner="qemu-aarch64-static"
+            ;;
+        armv7-unknown-linux-gnueabihf)
+            libpath="/usr/arm-linux-gnueabihf"
+            qemu_runner="qemu-arm-static"
+            ;;
+        *)
+            echo "No QEMU Linux runner configured for $TARGET."
+            exit 12
+            ;;
+    esac
+
+    if ! command -v "$qemu_runner" >/dev/null 2>&1; then
+        echo "Missing QEMU runner: $qemu_runner"
+        exit 13
+    fi
+
+    if [[ ! -d "$libpath" ]]; then
+        echo "Missing target library path: $libpath"
+        exit 14
     fi
 
     export RUST_BACKTRACE=full
-    "$arm_runner" -L "$libpath" "$binary_path" --help
-    "$arm_runner" -L "$libpath" "$binary_path" -vvv -w Cargo.toml 2> output.log || true
+    "$qemu_runner" -L "$libpath" "$binary_path" --help
+    "$qemu_runner" -L "$libpath" "$binary_path" -vvv -w Cargo.toml 2> output.log || true
 
     assert_output_contains "Connection refused (os error " 8
     assert_output_contains "Read disk settings-> { host: Some(" 9
@@ -202,12 +225,17 @@ case "$TARGET" in
         prepare_mac_os
         run_vm_test macos-sonoma-ci
         ;;
-    aarch64-unknown-linux-gnu|armv7-unknown-linux-gnueabihf)
-        if [[ "${ARM:-false}" == "true" ]]; then
-            run_arm_linux_qemu_test
+    x86_64-unknown-linux-gnu|i686-unknown-linux-gnu|aarch64-unknown-linux-gnu|armv7-unknown-linux-gnueabihf)
+        if [[ "$(uname -m)" == "x86_64" && "$TARGET" == "x86_64-unknown-linux-gnu" ]]; then
+            run_native_test
+        elif [[ "$(uname -m)" == "i686" && "$TARGET" == "i686-unknown-linux-gnu" ]]; then
+            run_native_test
+        elif [[ "$(uname -m)" == "aarch64" && "$TARGET" == "aarch64-unknown-linux-gnu" ]]; then
+            run_native_test
+        elif [[ "$(uname -m)" == "armv7l" && "$TARGET" == "armv7-unknown-linux-gnueabihf" ]]; then
+            run_native_test
         else
-            echo "ARM Linux target requested without ARM=true."
-            exit 12
+            run_linux_qemu_test
         fi
         ;;
     *)
