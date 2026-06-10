@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x
 
 : "${TARGETS:?TARGETS is required}"
 : "${BUILD_TYPE:=debug}"
@@ -34,7 +35,7 @@ for target in "${targets[@]}"; do
 
     export TARGET="$target"
     export BUILD_TYPE
-    export USE_CROSS=false
+    # export USE_CROSS=false
     export RUST_LOG=trace
 
     case "$target" in

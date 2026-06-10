@@ -28,7 +28,7 @@ build_one_target() {
 
     export TARGET="$target"
     export BUILD_TYPE
-    export USE_CROSS=false
+    # export USE_CROSS=false
 
     case "$target" in
         aarch64-*|armv7-*|arm-*)
