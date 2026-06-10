@@ -18,6 +18,10 @@ on:
       cross:  # Indicate if https://crates.io/crates/cross is needed
         type: boolean
         default: false
+      runner:
+        required: false
+        type: string
+        default: orangepi-docker
 
 env:
   ARM: ${{ inputs.arm }}
@@ -38,7 +42,7 @@ jobs:
       matrix:
         os: [forgejo-ci-rust:stable]
         rust: [stable]
-    runs-on: ghoolak-docker
+    runs-on: ${{ inputs.runner }}
     container:
       image: ${{ matrix.os }}
     steps:

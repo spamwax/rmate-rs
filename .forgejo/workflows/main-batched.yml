@@ -21,10 +21,11 @@ env:
 
 jobs:
   linux-batch:
-    runs-on: ghoolak-docker
+    runs-on: orangepie-docker
     if: ${{ contains(env.CI_JOBS, ',all,') || contains(env.CI_JOBS, ',linux,') }}
     uses: ./.forgejo/workflows/reusable_linux_batch.yml
     with:
+      runner: orangepie-docker
       targets: |
         x86_64-unknown-linux-gnu
         i686-unknown-linux-gnu
