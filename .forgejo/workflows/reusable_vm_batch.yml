@@ -1,0 +1,88 @@
+name: Reusable workflow for VMs
+
+on:
+  workflow_call:
+    inputs:
+      targets:
+        required: true
+        type: string
+      arm:
+        type: boolean
+        default: false
+      build_type:
+        type: string
+        default: "debug"
+      run_tests:
+        type: boolean
+        default: true
+      cross:  # Indicate if https://crates.io/crates/cross is needed
+        type: boolean
+        default: false
+      runner:
+        required: false
+        type: string
+        default: "orangepi-docker"
+
+env:
+  ARM: ${{ inputs.arm }}
+  TARGETS: ${{ inputs.targets }}
+  BUILD_TYPE: ${{ inputs.build_type }}
+  USE_CROSS: ${{ inputs.cross }}
+  RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
+  CROSS_NO_WARNINGS: "0"
+  CARGO_NET_RETRY: "10"
+  CARGO_HTTP_TIMEOUT: "120"
+  CARGO_HTTP_MULTIPLEXING: "false"
+  BUILD_PARALLEL: "false"
+  BUILD_JOBS: 2
+
+jobs:
+  build:
+    name: rust-${{ matrix.rust }} (${{ inputs.build_type }})
+    strategy:
+      matrix:
+        os: [forgejo-ci-rust:stable]
+        rust: [stable]
+    runs-on: ${{ inputs.runner }}
+    container:
+      image: ${{ matrix.os }}
+    steps:
+      - uses: https://data.forgejo.org/actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Verify prebuilt Rust image
+        run: |
+          rustc --version
+          cargo --version
+          rustup target list --installed
+          file --version
+          pcregrep -V
+          qemu-aarch64-static --version || true
+          qemu-arm-static --version || true
+
+      - name: Build (${{ inputs.build_type }}) in batch mode
+        run: ./.forgejo/workflows/build_batch.sh
+
+      - name: Ensure FreeBSD/illumos VM is running
+        if: ${{ inputs.run_tests && (contains(inputs.target, 'freebsd') || contains(inputs.target, 'illumos')) }}
+        run: ./.forgejo/workflows/ensure_vm_ready.sh "${{ inputs.target }}"
+
+      - name: Run tests
+        if: ${{ inputs.run_tests }}
+        run: .forgejo/workflows/run_test_batch.sh
+
+      - name: Prepare release artifact
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        run: |
+          .forgejo/workflows/prepare_artifact_batch.sh
+
+      - name: Upload for release
+        id: upload_artifact
+        uses: https://data.forgejo.org/actions/upload-artifact@v3
+        if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}
+        with:
+          name: binary-artifact-linux-batch
+          path: |
+            rmate_*.tar.gz
+          if-no-files-found: error
+
