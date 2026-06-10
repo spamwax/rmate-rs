@@ -4,6 +4,7 @@ set -euo pipefail
 : "${TARGETS:?TARGETS is required}"
 : "${BUILD_TYPE:=debug}"
 : "${BUILD_JOBS:=2}"
+: "${BUILD_PARALLEL:=true}"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/../.." && pwd)"
@@ -58,11 +59,26 @@ if (( ${#targets[@]} == 0 )); then
 fi
 
 echo "Building ${#targets[@]} target(s) with BUILD_TYPE=$BUILD_TYPE"
-echo "Parallelism: BUILD_JOBS=$BUILD_JOBS"
+echo "BUILD_PARALLEL=$BUILD_PARALLEL"
+if [[ "$BUILD_PARALLEL" == "true" || "$BUILD_PARALLEL" == "1" || "$BUILD_PARALLEL" == "yes" ]]; then
+    echo "Parallelism: BUILD_JOBS=$BUILD_JOBS"
+else
+    echo "Parallelism disabled; targets will be built sequentially."
+fi
 printf '  %s\n' "${targets[@]}"
 
-printf '%s\n' "${targets[@]}" |
-    parallel --jobs "$BUILD_JOBS" --halt soon,fail=1 --line-buffer build_one_target {}
+if [[ "$BUILD_PARALLEL" == "true" || "$BUILD_PARALLEL" == "1" || "$BUILD_PARALLEL" == "yes" ]]; then
+    printf '%s\n' "${targets[@]}" |
+        parallel --jobs "$BUILD_JOBS" --halt soon,fail=1 --line-buffer build_one_target {}
+else
+    for target in "${targets[@]}"; do
+        build_one_target "$target"
+    done
+fi
 
 echo
-echo "All batched Linux builds completed successfully. (concurrency: $BUILD_JOBS)"
+if [[ "$BUILD_PARALLEL" == "true" || "$BUILD_PARALLEL" == "1" || "$BUILD_PARALLEL" == "yes" ]]; then
+    echo "All batched Linux builds completed successfully. (concurrency: $BUILD_JOBS)"
+else
+    echo "All batched Linux builds completed successfully. (sequential)"
+fi
