@@ -44,8 +44,8 @@ jobs:
         os: [forgejo-ci-rust:stable]
         rust: [stable]
     runs-on: ${{ inputs.runner }}
-    container:
-      image: ${{ matrix.os }}
+    # container:
+    #   image: ${{ matrix.os }}
     steps:
       - uses: https://data.forgejo.org/actions/checkout@v4
         with:
