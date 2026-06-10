@@ -21,7 +21,7 @@ on:
       runner:
         required: false
         type: string
-        default: orangepi-docker
+        default: "orangepi-docker"
 
 env:
   ARM: ${{ inputs.arm }}
