@@ -28,6 +28,7 @@ env:
   TARGETS: ${{ inputs.targets }}
   BUILD_TYPE: ${{ inputs.build_type }}
   USE_CROSS: ${{ inputs.cross }}
+  RUN_TESTS: ${{ inupts.run_tests }}
   RELEASE_COMMIT: ${{ github.ref_type == 'tag' }}
   CROSS_NO_WARNINGS: "0"
   CARGO_NET_RETRY: "10"
@@ -61,6 +62,7 @@ jobs:
           qemu-arm-static --version || true
 
       - name: Build (${{ inputs.build_type }}) in batch mode
+        if: ${{ !contains(inputs.runner, 'orangepi') }}
         run: ./.forgejo/workflows/build_batch.sh
 
       - name: Ensure FreeBSD/illumos VM is running
@@ -68,8 +70,12 @@ jobs:
         run: ./.forgejo/workflows/ensure_vm_ready.sh "${{ inputs.target }}"
 
       - name: Run tests
-        if: ${{ inputs.run_tests }}
+        if: ${{ inputs.run_tests && !contains(inputs.runner, 'orangepi') }}
         run: .forgejo/workflows/run_test_batch.sh
+
+      - name: Build & Test inside VM
+        if: ${{ contains(inputs.runner, 'orangepi' )}}
+        run: .forgejo/workflows/build_and_test_in_vm.sh "${{ inputs.target }}"
 
       - name: Prepare release artifact
         if: ${{ github.ref_type == 'tag' && matrix.rust == 'stable' }}

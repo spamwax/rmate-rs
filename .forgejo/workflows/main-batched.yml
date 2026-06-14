@@ -43,6 +43,7 @@ jobs:
       runner: orangepi-host
       targets: |
         x86_64-unknown-freebsd
+        i686-unknown-freebsd
       build_type: "debug"
       run_tests: true
       cross: true
