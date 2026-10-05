@@ -12,6 +12,7 @@ use structopt::StructOpt;
 pub(crate) const NO_TRIES_CREATE_BACKUP_FN: u8 = 5;
 pub(crate) const RMATE_HOST: &str = "localhost";
 pub(crate) const RMATE_PORT: u16 = 52698;
+pub(crate) const RMATE_UNIXSOCKET: &str = "~/.rmate.socket";
 
 // program settings from command-line arguments and environment variables
 #[allow(clippy::struct_excessive_bools)]
@@ -31,6 +32,11 @@ pub(crate) struct Settings {
     /// Port number to use for connection. Defaults to 52698
     #[structopt(short, long, env = "RMATE_PORT", name = "PORT")]
     pub port: Option<u16>,
+
+    /// UNIX socket path. Takes precedence over host/port if the file exists.
+    /// Defaults to ~/.rmate.socket
+    #[structopt(short = "s", long, env = "RMATE_UNIXSOCKET", name = "PATH")]
+    pub unixsocket: Option<String>,
 
     #[allow(clippy::doc_markdown)]
     /// Have *TextMate* retain window focus after file is closed
@@ -90,13 +96,17 @@ pub struct RcSettings {
     pub(crate) unixsocket: Option<String>,
 }
 
-// Read host/settings from rmate.rc files
-pub(crate) fn read_disk_settings() -> (String, u16) {
+// Read host/port/unixsocket settings from rmate.rc files
+pub(crate) fn read_disk_settings() -> (String, u16, String) {
     trace!("Loading settings from rmate.rc files");
     // Environment variables and command-line flags are handled by StructOpt in
     // Settings::from_args(); main.rs then preserves those values with get_or_insert().
     // This function only handles hardcoded defaults plus rc files.
-    let host_port = (self::RMATE_HOST.to_string(), self::RMATE_PORT);
+    let host_port = (
+        self::RMATE_HOST.to_string(),
+        self::RMATE_PORT,
+        self::RMATE_UNIXSOCKET.to_string(),
+    );
     [
         "/etc/rmate.rc",
         "/usr/local/etc/rmate.rc",
@@ -149,9 +159,10 @@ pub(crate) fn read_disk_settings() -> (String, u16) {
                 trace!("    {:?}", s.as_ref().unwrap_err());
             } else {
                 trace!(
-                    "  Read disk settings-> {{ host: {:?}\tport: {:?} }}",
+                    "  Read disk settings-> {{ host: {:?}\tport: {:?}\tunixsocket: {:?} }}",
                     s.as_ref().unwrap().host.as_ref(),
                     s.as_ref().unwrap().port.as_ref(),
+                    s.as_ref().unwrap().unixsocket.as_ref(),
                 );
             }
         },
@@ -159,13 +170,24 @@ pub(crate) fn read_disk_settings() -> (String, u16) {
     .filter(|(s, _)| s.is_ok())
     .map(|(s, _)| s.unwrap())
     .fold(host_port, |acc, item: self::RcSettings| {
-        let (mut newhost, mut newport) = acc;
+        let (mut newhost, mut newport, mut newsocket) = acc;
         if let Some(host) = item.host {
             newhost = host;
         }
         if let Some(port) = item.port {
             newport = port;
         }
-        (newhost, newport)
+        if let Some(unixsocket) = item.unixsocket {
+            newsocket = unixsocket;
+        }
+        (newhost, newport, newsocket)
     })
+}
+
+// Replace a leading "~/" in a path with the home directory
+pub(crate) fn expand_home(path: &str) -> PathBuf {
+    match (path.strip_prefix("~/"), dirs::home_dir()) {
+        (Some(rest), Some(home)) => home.join(rest),
+        _ => PathBuf::from(path),
+    }
 }

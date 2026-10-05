@@ -1,6 +1,6 @@
 use super::settings;
 use log::{debug, info, trace};
-use socket2::{Domain, Type};
+use socket2::{Domain, SockAddr, Type};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Write};
@@ -9,6 +9,23 @@ use std::net::{IpAddr, Ipv4Addr};
 pub(crate) fn connect_to_editor(
     settings: &settings::Settings,
 ) -> Result<socket2::Socket, std::io::Error> {
+    // Like the Ruby rmate, the UNIX socket takes precedence over host/port if the file exists
+    let unixsocket = settings::expand_home(settings.unixsocket.as_ref().unwrap());
+    if unixsocket.exists() {
+        let socket = socket2::Socket::new(Domain::unix(), Type::stream(), None)?;
+        debug!("About to connect to UNIX socket {}", unixsocket.display());
+        socket.connect(&SockAddr::unix(&unixsocket)?)?;
+        trace!(
+            "Socket details: \n\tremote address {:?}",
+            socket.peer_addr()?
+        );
+        return Ok(socket);
+    }
+    trace!(
+        "No UNIX socket at {}, using host/port",
+        unixsocket.display()
+    );
+
     let socket = socket2::Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
 
     debug!("Host: {}", settings.host.as_ref().unwrap());

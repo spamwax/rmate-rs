@@ -18,6 +18,7 @@ Pre-complied binaries for following platforms are available in [Releases page](h
 ### Features
 
 - Support all options and rmate.rc settings described in [Ruby implementation](https://github.com/textmate/rmate).
+- Connect over a UNIX socket (`-s`/`--unixsocket`, `RMATE_UNIXSOCKET`, or `unixsocket` in rmate.rc; default `~/.rmate.socket`). The socket takes precedence over host/port if the file exists. Forward it with SSH using `RemoteForward /path/to/.rmate.socket localhost:52698`: other users on a shared server cannot connect to the socket, as they can to a TCP port.
 - Create backups of local files to avoid corrupting your files if any io/network operations go wrong.
 - Verbose logging of operation (use `-v` one or more times).
 

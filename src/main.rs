@@ -35,12 +35,13 @@ fn main() -> Result<(), String> {
     }
     env_logger::init();
 
-    // Set host/port if user didn't specify in arguments and
+    // Set host/port/unixsocket if user didn't specify in arguments and
     // we found them in one of rmate.rc files. Otherwise use
     // default values.
     let disk_settings = settings::read_disk_settings();
     settings.host.get_or_insert(disk_settings.0);
     settings.port.get_or_insert(disk_settings.1);
+    settings.unixsocket.get_or_insert(disk_settings.2);
 
     // if --host auto is set in cmd line arguments, we try to find the host address from
     // SSH_CONNECTION
