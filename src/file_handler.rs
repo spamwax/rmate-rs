@@ -7,7 +7,7 @@ use std::fs::File;
 use std::fs::{canonicalize, metadata, Metadata};
 use std::hash::{Hash, Hasher};
 use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Read, Seek, SeekFrom, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
 use std::{cmp, format};
 use std::{fs, io};
@@ -139,7 +139,8 @@ pub(crate) fn write_to_disk(
             backup_fn.push("~");
             backup_fn_canon.set_file_name(&backup_fn);
 
-            let mut can_backup = true;
+            // There is nothing to back up if the file does not exist yet.
+            let mut can_backup = fn_canon.exists();
             let mut no_backup_tries = 0;
             while backup_fn_canon.is_file() {
                 if no_backup_tries < settings::NO_TRIES_CREATE_BACKUP_FN {
@@ -176,6 +177,7 @@ pub(crate) fn write_to_disk(
             let fn_canon = opened_buffer.canon_path.as_path();
             let fp = fs::OpenOptions::new()
                 .write(true)
+                .create(true)
                 .truncate(true)
                 .open(fn_canon)
                 .map_err(|e| Error::other(format!("{}: {:?}", fn_canon.to_string_lossy(), e)))?;
@@ -248,25 +250,24 @@ pub(crate) fn get_requested_buffers(
 
     // Iterate over all files and create bookkeeping info
     for (idx, file) in settings.files.iter().enumerate() {
-        #[allow(clippy::if_not_else)]
-        let filename_canon = if !settings.create {
-            canonicalize(file).map_err(|e| e.to_string())?
-        } else {
-            let r = canonicalize(file);
-            match r {
-                Err(e) => match e.kind() {
-                    ErrorKind::NotFound => {
-                        info!("Creating new empty file: {:?}", &file.display());
-                        let _r = File::create(file).map_err(|e| e.to_string())?;
-                        canonicalize(file).map_err(|e| e.to_string())?
-                    }
-                    _ => return Err(e.to_string()),
-                },
-                Ok(fc) => {
+        let filename_canon = match canonicalize(file) {
+            Ok(fc) => {
+                if settings.create {
                     warn!("File already exists: {:?}", &fc.display());
-                    fc
                 }
+                fc
             }
+            Err(e) if e.kind() == ErrorKind::NotFound && settings.create => {
+                info!("Creating new empty file: {:?}", &file.display());
+                let _r = File::create(file).map_err(|e| e.to_string())?;
+                canonicalize(file).map_err(|e| e.to_string())?
+            }
+            // Like the Ruby rmate, open a missing file as an empty buffer;
+            // the file is created when the editor saves it.
+            Err(e) if e.kind() == ErrorKind::NotFound => {
+                canonicalize_missing(file).map_err(|e| e.to_string())?
+            }
+            Err(e) => return Err(e.to_string()),
         };
 
         #[allow(clippy::needless_late_init)]
@@ -290,11 +291,22 @@ pub(crate) fn get_requested_buffers(
             None
         };
 
-        let md = metadata(&filename_canon).map_err(|e| e.to_string())?;
-        if md.is_dir() {
+        let md = if filename_canon.exists() {
+            Some(metadata(&filename_canon).map_err(|e| e.to_string())?)
+        } else {
+            info!(
+                "{} does not exist yet, it will be created on save",
+                filename_canon.display()
+            );
+            None
+        };
+        if md.as_ref().is_some_and(Metadata::is_dir) {
             return Err("openning directory not supported".to_string());
         }
-        let canwrite = is_writable(&filename_canon, &md);
+        // A missing file is checked for write access when it is saved.
+        let canwrite = md
+            .as_ref()
+            .is_none_or(|md| is_writable(&filename_canon, md));
         // Show a warning even though user has used the --force flag.
         if !canwrite && settings.force {
             warn!("{} is readonly!", filename_canon.display());
@@ -312,7 +324,7 @@ pub(crate) fn get_requested_buffers(
         disp_name.push(":");
         disp_name.push(file_name_string);
 
-        let filesize = md.len();
+        let filesize = md.as_ref().map_or(0, Metadata::len);
         let rand_temp_file = tempfile::tempfile().map_err(|e| e.to_string())?;
 
         let mut hasher = DefaultHasher::new();
@@ -341,6 +353,23 @@ pub(crate) fn get_requested_buffers(
     }
     trace!("All opened buffers:\n{:#?}", &buffers);
     Ok(buffers)
+}
+
+// Canonicalize the path of a file that does not exist yet: its parent
+// directory must exist.
+fn canonicalize_missing<P: AsRef<Path>>(p: P) -> io::Result<PathBuf> {
+    let p = p.as_ref();
+    let file_name = p.file_name().ok_or_else(|| {
+        Error::new(
+            ErrorKind::InvalidInput,
+            "no valid file name found in input argument",
+        )
+    })?;
+    let parent = match p.parent() {
+        Some(dir) if !dir.as_os_str().is_empty() => dir,
+        _ => Path::new("."),
+    };
+    Ok(canonicalize(parent)?.join(file_name))
 }
 
 // Check if file is writable by user

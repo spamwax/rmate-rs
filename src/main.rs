@@ -16,8 +16,6 @@ use structopt::StructOpt;
 //       workflow that each step in release.yml calls it with different input parameters.
 // TODO: Investigate the type (u64, u32, ...) that file IO functions (such as fs::copy) return on other platforms.
 //       We can then remove clippy::cast_possible_truncation from file_handler.rs
-// TODO: Flip how the setting for creating non-existing files work so by default it doesn't create
-//       new empty files.<18-07-22, hamid> //
 
 fn main() -> Result<(), String> {
     // Read settings from cmd line arguments

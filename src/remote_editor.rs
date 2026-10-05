@@ -3,7 +3,7 @@ use log::{debug, info, trace};
 use socket2::{Domain, Type};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Error, ErrorKind, Write};
+use std::io::{self, BufRead, BufReader, BufWriter, Error, ErrorKind, Read, Write};
 use std::net::{IpAddr, Ipv4Addr};
 
 pub(crate) fn connect_to_editor(
@@ -101,8 +101,13 @@ pub(crate) fn open_file_in_remote(
             writeln!(&mut buf_writer, "data: {}", opened_buffer.size).map_err(|e| e.to_string())?;
             buf_writer.flush().map_err(|e| e.to_string())?;
 
-            // Read file from disk and send it over the socket
-            let fp = File::open(&opened_buffer.canon_path).map_err(|e| e.to_string())?;
+            // Read file from disk and send it over the socket.
+            // A file that does not exist yet is sent as empty.
+            let fp: Box<dyn Read> = if opened_buffer.canon_path.exists() {
+                Box::new(File::open(&opened_buffer.canon_path).map_err(|e| e.to_string())?)
+            } else {
+                Box::new(io::empty())
+            };
             let mut buf_reader = BufReader::with_capacity(bsize, fp);
             debug!(
                 "-> Opening {} (size: {} bytes).",

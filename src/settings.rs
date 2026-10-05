@@ -46,7 +46,8 @@ pub(crate) struct Settings {
     #[structopt(short, long)]
     pub force: bool,
 
-    /// Create a new file if the given file name does not exist
+    /// Create a missing file when opening it.
+    /// Without this flag, a missing file is created when it is first saved
     #[structopt(short, long)]
     pub create: bool,
 

@@ -20,6 +20,7 @@ Pre-complied binaries for following platforms are available in [Releases page](h
 - Support all options and rmate.rc settings described in [Ruby implementation](https://github.com/textmate/rmate).
 - Create backups of local files to avoid corrupting your files if any io/network operations go wrong.
 - Verbose logging of operation (use `-v` one or more times).
+- Open a file that does not exist yet as an empty buffer; the file is created when you first save it. Use `-c`/`--create` to create it when opening.
 
 ### Demo
 [![the screencat](https://asciinema.org/a/fqgvpm9yPdDFAZ11f8uY1DF26.svg)](https://asciinema.org/a/fqgvpm9yPdDFAZ11f8uY1DF26).
